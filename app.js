@@ -132,8 +132,13 @@ app.get('/showJSON',function(req,res,next){
       })
     }
     else {
-      var contentGraph = amp.inlineContent(JSON.parse(body));
-      console.log(contentGraph);
+      //var contentGraph = amp.inlineContent(JSON.parse(body));
+      //console.log(contentGraph);
+      //var stringContent = JSON.stringify(contentGraph,null,'\t');
+      let content = JSON.parse(body);
+      let contentWithMeta = getImgData(content);
+      var contentGraph = amp.inlineContent(contentWithMeta);
+      console.log(contentGraph)
       var stringContent = JSON.stringify(contentGraph,null,'\t');
       res.render('showJSON',{
         static_path:'/static',
