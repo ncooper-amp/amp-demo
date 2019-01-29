@@ -1,0 +1,22 @@
+{{@key}}<br />
+{{#each this}}
+  {{#if (eq template 'Hero')}}
+    {{> hero }}
+  {{/if}}
+  <!-- <div class="col-lg-3 col-md-6 col-sm-12"> -->
+  {{#if (eq @key 'image')}}
+    <img src="http://{{this.defaultHost}}/i/{{this.endpoint}}/{{this.name}}?w=200" width=200 border=0 />
+  {{else if (isArray this)}}
+    <div class="row">
+      {{this}}
+      {{> renderAny }}
+    </div>
+  {{else if (isObject this)}}
+    <div class="row">
+      {{> renderAny }}
+    </div>
+  {{else}}
+    <strong>@key: {{@key}}</strong> {{this}}
+  {{/if}}
+{{/each}}
+<!-- </div> -->

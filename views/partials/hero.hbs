@@ -1,0 +1,19 @@
+<div class="col-12">
+  {{#if (eq content.textposition 'left')}}
+  <div class="justify-content-start">
+  {{/if}}
+  {{#if (eq content.textposition 'center')}}
+  <div class="justify-content-center">
+  {{/if}}
+  {{#if (eq content.textposition 'right')}}
+  <div class="justify-content-end">
+  {{/if}}
+    <div class="bannerText" style="text-align:{{content.textposition}}">
+            {{#each content.bannerText}}
+              <p class = "{{class}}" style="color:{{formatting}};">{{text}}</p>
+            {{/each}}
+    </div>
+  </div>
+  <img style="position:relative; top:-3rem; z-index:-1" class="img-fluid" src="http://i1-qa.adis.ws/i/{{content.backgroundAmpImage.image.endpoint}}/{{content.backgroundAmpImage.image.name}}" alt=""/>
+
+</div>

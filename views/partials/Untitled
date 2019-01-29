@@ -1,0 +1,17 @@
+{{@key}}<br />
+<div class="container">
+{{#each this}}
+  <div class="container">
+  <br />
+  {{#if (eq @key 'image')}}
+    <img src="http://{{this.defaultHost}}/i/{{this.endpoint}}/{{this.name}}?w=200" width=200 border=0 />
+  {{else if (isArray this)}}
+    {{> renderAny }}
+  {{else if (isObject this)}}
+    {{> renderAny }}
+   {{else}}
+    <strong>@key: {{@key}}</strong> {{this}}
+  {{/if}}
+  </div>
+{{/each}}
+</div>
