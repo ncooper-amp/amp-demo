@@ -82,7 +82,7 @@ app.get('/',function(req,res,next){
     method:'GET',
     url:"http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store
   };
-  request(options,function(err,response,body){
+  request(options,async function(err,response,body){
     // console.log(response);
     // console.log(options);
     if(err){
@@ -97,7 +97,7 @@ app.get('/',function(req,res,next){
     }
     else {
       let content = JSON.parse(body);
-      let contentWithMeta = getImgData(content);
+      let contentWithMeta = await getImgData(content);
       var contentGraph = amp.inlineContent(contentWithMeta);
       console.log(contentGraph)
       var stringContent = JSON.stringify(contentGraph,null,'\t');
@@ -120,7 +120,7 @@ app.get('/showJSON',function(req,res,next){
     method:'GET',
     url:"http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store
   };
-  request(options,function(err,response,body){
+  request(options,async function(err,response,body){
     if(err){
       res.render('showJSON',{
         static_path:'/static',
@@ -136,7 +136,9 @@ app.get('/showJSON',function(req,res,next){
       //console.log(contentGraph);
       //var stringContent = JSON.stringify(contentGraph,null,'\t');
       let content = JSON.parse(body);
-      let contentWithMeta = getImgData(content);
+      console.log(content)
+      let contentWithMeta = await getImgData(content);
+      console.log(contentWithMeta)
       var contentGraph = amp.inlineContent(contentWithMeta);
       console.log(contentGraph)
       var stringContent = JSON.stringify(contentGraph,null,'\t');
