@@ -1,0 +1,21 @@
+{
+  "name": "Amplience-Demo-Site",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "async": "^2.5.0",
+    "aws-sdk": "latest",
+    "body-parser": "latest",
+    "express": "latest",
+    "express-handlebars": "latest",
+    "express-validator": "^4.2.0",
+    "handlebars": "^4.0.12",
+    "path": "latest",
+    "request": "latest",
+    "handlebars-helpers": "^0.10.0",
+    "cms-javascript-sdk": "git+https://github.com/amplience/cms-javascript-sdk.git#0.0.2"
+  },
+  "scripts": {
+    "start": "nodemon app.js"
+  }
+}
