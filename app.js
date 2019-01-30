@@ -44,6 +44,30 @@ var apiKey = process.env.KEY
 var apiSecret = process.env.SECRET
 var endPoint = process.env.ENDPOINT
 
+const getAuthToken = function(){
+  return new Promise(function(resolve, reject){
+    axios({
+      method:"post",
+      url:"https://auth-qa3.adis.ws/oauth/token",
+      headers:{
+        "Content-Type":"application/x-www-form-urlencoded"
+      },
+      params:{
+        username:userName,
+        password:passWord,
+        client_id:clientId,
+        grant_type:"password",
+      }
+    })
+    .then(response => {
+      resolve(response.data.access_token);
+      })
+    .catch(error => {
+      console.log(error);
+      reject(error);
+    })
+  })
+};
 
 const getImgData = async function (graph) {
     let promises = [];
@@ -68,6 +92,42 @@ app.get('/',async function(req,res,next){
     query:req.query,
     content:contentGraph[0]
   })
+})
+
+app.get('/ListContentItems/:size/:page', function (req, res, next) {
+
+      try{
+        getAuthToken().then(authToken =>{
+          axios({
+            method:"get",
+            url: "http://"+cmsEnvironment+"/cms-service/content-repositories/"+respositoryId+"/content-items?page="+req.params.page+"&size="+req.params.size,
+            headers:{
+              "Authorization": "Bearer " + authToken
+            }
+          })
+            .then(response => {
+              var contentGraph = response.data;
+              stringContent = JSON.stringify(response.data,null,'\t');
+              //console.log(response);
+              res.render('list-content-items',{'title':'List Content Items - Success','contentGraph': contentGraph, 'stringContent' : stringContent, 'reqParams': req.query});
+            })
+            .catch(error => {
+              console.log(error);
+              res.render('list-content-items',{'title':'List Content Items - Fail','reqParams': req.query, 'error':error});
+            });
+        })
+        .catch(error => {
+          console.log(error)
+        })
+
+        }
+      catch (e) {
+        next(e)
+      }
+
+
+  /* res.render('list-content-items',{title:"List Content Items",error:"figure out how to authorize so that i can list the content items and create links.."}) */
+
 })
 
 app.get('/carousel',async function(req,res,next){

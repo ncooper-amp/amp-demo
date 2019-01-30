@@ -1,0 +1,21 @@
+
+{{> header }}
+
+  <h1>List Content Items</h1>
+  <p>{{error}}</p>
+  <div id="populateContent">
+
+    {{#each contentGraph }}
+      {{#each this}}
+        {{#if (eq @key 'content-items')}}
+          {{#each this}}
+            <a href="http://127.0.0.1:3000?id={{this.id}}&store=cmslabs">{{this.label}}</a><br />
+          {{/each}}
+        {{/if}}
+      {{/each}}
+    </div>
+    {{/each}}
+
+    {{> footer }}
+  </body>
+</html>
