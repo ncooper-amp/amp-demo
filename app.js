@@ -9,6 +9,7 @@ var request = require('request');
 var hbs = require('handlebars');
 var expressHbs = require('express-handlebars');
 var helpers = require('handlebars-helpers')(['array', 'object', 'comparison','regex']);
+var axios = require('axios')
 
 var app = express();
 app.use('/static', express.static(path.join(__dirname,'/static')));
@@ -43,115 +44,43 @@ var apiKey = process.env.KEY
 var apiSecret = process.env.SECRET
 var endPoint = process.env.ENDPOINT
 
-const getImgData = function (cGraphNode) {
-    let promises = [];
-    for (i in cGraphNode) {
-        console.log("i:")
-        console.log(i);
-        console.log("typeof(cGraphNode[i]):");
-        console.log(typeof (cGraphNode[i]))
-        console.log("cGraphNode[i]:")
-        console.log(cGraphNode[i])
-        //console.log(cGraphNode[i])
-        if (i == 'image') {
-            //console.log("http://i1-qa.adis.ws/i/"+cGraphNode[i].endpoint+"/"+cGraphNode[i].name+".json?metadata=true")
-            var options = {
-                method: 'GET',
-                url: "http://i1-qa.adis.ws/i/" + cGraphNode[i].endpoint + "/" + cGraphNode[i].name + ".json?metadata=true"
-            }
-            var myPromise = new Promise(function (resolve, reject) {
-                request(options, function (err, response, body) {
-                    if (err) {
-                        reject(err);
-                    } else {
-                        cGraphNode[i].imgMetaData = body;
-                        console.log(body)
-                        resolve(cGraphNode);
-                    }
-                })
-            });
-            promises.push(myPromise);
 
+const getImgData = async function (graph) {
+    let promises = [];
+    for (var i = 0; i < graph.length; i++) {
+        if (graph[i].mediaType == 'image') {
+            let metadata = await axios.get("http://i1-qa.adis.ws/i/" + graph[i].endpoint + "/" + graph[i].name + ".json?metadata=true");
+            graph[i].imgMetaData = metadata.data;
         }
     }
-    return Promise.all(promises);
 }
 
-app.get('/',function(req,res,next){
-  var options = {
-    method:'GET',
-    url:"http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store
-  };
-  request(options,async function(err,response,body){
-    // console.log(response);
-    // console.log(options);
-    if(err){
-      res.render('homepage',{
-        static_path:'/static',
-        theme:process.env.THEME || 'flatly',
-        pageTitle : "HomePage",
-        pageDescription : "Homepage",
-        content:err,
-        query:req.query
-      })
-    }
-    else {
-      let content = JSON.parse(body);
-      let contentWithMeta = await getImgData(content);
-      var contentGraph = amp.inlineContent(contentWithMeta);
-      console.log(contentGraph)
-      var stringContent = JSON.stringify(contentGraph,null,'\t');
-      res.render('homepage',{
-          static_path:'/static',
-          theme:process.env.THEME || 'flatly',
-          pageTitle : "HomePage",
-          pageDescription : "Homepage",
-          content:contentGraph[0],
-          stringContent:stringContent,
-          query:req.query
-      })
-    }
+app.get('/',async function(req,res,next){
+  let content = await axios.get("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
+  await getImgData(content.data['@graph']);
+  var contentGraph = amp.inlineContent(content.data);
+  var stringContent = JSON.stringify(contentGraph,null,'\t');
+  res.render('homepage',{
+    static_path:'/static',
+    theme:process.env.THEME || 'flatly',
+    pageTitle : "HomePage",
+    pageDescription : "Homepage",
+    query:req.query,
+    content:contentGraph[0]
   })
-
 })
 
-app.get('/showJSON',function(req,res,next){
-  var options = {
-    method:'GET',
-    url:"http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store
-  };
-  request(options,async function(err,response,body){
-    if(err){
-      res.render('showJSON',{
-        static_path:'/static',
-        theme:process.env.THEME || 'flatly',
-        pageTitle : "HomePage",
-        pageDescription : "Homepage",
-        content:err,
-        query:req.query
-      })
-    }
-    else {
-      //var contentGraph = amp.inlineContent(JSON.parse(body));
-      //console.log(contentGraph);
-      //var stringContent = JSON.stringify(contentGraph,null,'\t');
-      let content = JSON.parse(body);
-      console.log(content)
-      let contentWithMeta = await getImgData(content);
-      console.log(contentWithMeta)
-      var contentGraph = amp.inlineContent(contentWithMeta);
-      console.log(contentGraph)
-      var stringContent = JSON.stringify(contentGraph,null,'\t');
-      res.render('showJSON',{
-        static_path:'/static',
-        theme:process.env.THEME || 'flatly',
-        pageTitle : "HomePage",
-        pageDescription : "Homepage",
-        stringContent:stringContent,
-        query:req.query
-      })
-    }
-
+app.get('/showJSON', async function(req,res,next){
+  let content = await axios.get("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
+  await getImgData(content.data['@graph']);
+  var contentGraph = amp.inlineContent(content.data);
+  var stringContent = JSON.stringify(contentGraph,null,'\t');
+  res.render('showJSON',{
+    static_path:'/static',
+    theme:process.env.THEME || 'flatly',
+    pageTitle : "HomePage",
+    pageDescription : "Homepage",
+    stringContent:stringContent,
+    query:req.query
   })
-
 })

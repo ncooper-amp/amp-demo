@@ -7,7 +7,7 @@
         <div class="carousel-item">
       {{/if}}
       {{#if (eq [@type] 'http://c1-qa.adis.ws/c/cmslabs/image-block')}}
-          <img class="d-block" src="http://{{image.defaultHost}}/i/{{image.endpoint}}/{{image.name}}?w=600&h=250" border=0 />
+          <img class="d-block" src="http://{{image.defaultHost}}/i/{{image.endpoint}}/{{image.name}}?w=600&h=250" border=0 alt="{{#each image.imgMetaData.metadata.detectedText.textLines}}{{this}} {{/each}}" title="{{#each image.imgMetaData.metadata.detectedText.textLines}}{{this}} {{/each}}"/>
       {{/if}}
       {{#if (eq [@type] 'http://c1-qa.adis.ws/c/cmslabs/content-stack')}}
         {{> slides }}
