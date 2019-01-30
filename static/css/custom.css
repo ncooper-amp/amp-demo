@@ -71,3 +71,9 @@ height: 70px; /* Set the fixed height of the footer here */
 line-height: 70px; /* Vertically center the text there */
 background-color: #661163;
 }
+
+.carousel-item.active,
+.carousel-item-next,
+.carousel-item-prev {
+  display: block;
+}
