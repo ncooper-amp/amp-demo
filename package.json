@@ -5,15 +5,16 @@
   "dependencies": {
     "async": "^2.5.0",
     "aws-sdk": "latest",
+    "axios": "^0.18.0",
     "body-parser": "latest",
+    "cms-javascript-sdk": "git+https://github.com/amplience/cms-javascript-sdk.git#0.0.2",
     "express": "latest",
     "express-handlebars": "latest",
     "express-validator": "^4.2.0",
     "handlebars": "^4.0.12",
-    "path": "latest",
-    "request": "latest",
     "handlebars-helpers": "^0.10.0",
-    "cms-javascript-sdk": "git+https://github.com/amplience/cms-javascript-sdk.git#0.0.2"
+    "path": "latest",
+    "request": "latest"
   },
   "scripts": {
     "start": "nodemon app.js"
