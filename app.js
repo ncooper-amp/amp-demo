@@ -1,5 +1,8 @@
 var AWS = require('aws-sdk');
 var express = require('express');
+var fs = require('fs');
+var https = require('https')
+var http = require('http')
 var amp = require('cms-javascript-sdk');
 var router = express.Router();
 var bodyParser = require('body-parser');
@@ -27,11 +30,44 @@ app.use(bodyParser.urlencoded({extended:false}));
 app.use(expressValidator());
 app.set('node_modules', __dirname + '/node_modules');
 app.set('models', __dirname + '/models');
-var port = process.env.PORT || 3000;
 
-var server = app.listen(port, function() {
+/*
+
+yes, port 80 and 443 would be better, but they're blocked for localhost so these two will have to do...
+
+*/
+var port = process.env.PORT || 3000;
+var securePort = process.env.SECURE_PORT || 3001;
+
+
+/*
+
+http://webcache.googleusercontent.com/search?q=cache:https://docs.nodejitsu.com/articles/HTTP/servers/how-to-create-a-HTTPS-server
+
+create self-signed certs by doing these in the terminal - within the folder where app.js is
+
+openssl genrsa -out key.pem
+openssl req -new -key key.pem -out csr.pem
+openssl x509 -req -days 9999 -in csr.pem -signkey key.pem -out cert.pem
+rm csr.pem
+
+*/
+
+var options = {
+  key: fs.readFileSync('key.pem'),
+  cert: fs.readFileSync('cert.pem')
+};
+
+
+
+var server = http.createServer(app).listen(port, function() {
   console.log('Server running at http://127.0.0.1:' + port + '/')
 })
+
+var sectureServer = https.createServer(options,app).listen(securePort, function() {
+  console.log('Server running at http://127.0.0.1:' + securePort + '/')
+})
+
 
 var vseEnvironment = process.env.VSE_ENV
 var respositoryId = process.env.REPO_ID
@@ -43,6 +79,7 @@ var clientId = process.env.CLIENT
 var apiKey = process.env.KEY
 var apiSecret = process.env.SECRET
 var endPoint = process.env.ENDPOINT
+var imgSrc = process.env.IMGSRC
 
 const getAuthToken = function(){
   return new Promise(function(resolve, reject){
@@ -73,14 +110,15 @@ const getImgData = async function (graph) {
     let promises = [];
     for (var i = 0; i < graph.length; i++) {
         if (graph[i].mediaType == 'image') {
-            let metadata = await axios.get("http://i1-qa.adis.ws/i/" + graph[i].endpoint + "/" + graph[i].name + ".json?metadata=true");
+            let metadata = await axios.get("http://"+imgSrc+"/i/" + graph[i].endpoint + "/" + graph[i].name + ".json?metadata=true");
             graph[i].imgMetaData = metadata.data;
         }
     }
 }
 
 app.get('/',async function(req,res,next){
-  let content = await axios.get("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
+  console.log("http://"+ req.query.vse +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
+  let content = await axios.get("http://"+ req.query.vse +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
   await getImgData(content.data['@graph']);
   var contentGraph = amp.inlineContent(content.data);
   var stringContent = JSON.stringify(contentGraph,null,'\t');
@@ -100,7 +138,7 @@ app.get('/ListContentItems/:size/:page', function (req, res, next) {
         getAuthToken().then(authToken =>{
           axios({
             method:"get",
-            url: "http://"+cmsEnvironment+"/cms-service/content-repositories/"+respositoryId+"/content-items?page="+req.params.page+"&size="+req.params.size,
+            url: "http://"+cmsEnvironment+"/content-repositories/"+respositoryId+"/content-items?page="+req.params.page+"&size="+req.params.size,
             headers:{
               "Authorization": "Bearer " + authToken
             }
@@ -131,7 +169,8 @@ app.get('/ListContentItems/:size/:page', function (req, res, next) {
 })
 
 app.get('/carousel',async function(req,res,next){
-  let content = await axios.get("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
+  console.log("http://"+ req.query.vse +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store);
+  let content = await axios.get("http://"+ req.query.vse +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
   await getImgData(content.data['@graph']);
   var contentGraph = amp.inlineContent(content.data);
   var stringContent = JSON.stringify(contentGraph,null,'\t');
@@ -148,7 +187,7 @@ app.get('/carousel',async function(req,res,next){
 
 
 app.get('/panels',async function(req,res,next){
-  let content = await axios.get("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
+  let content = await axios.get("http://"+ req.query.vse +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
   await getImgData(content.data['@graph']);
   var contentGraph = amp.inlineContent(content.data);
   var stringContent = JSON.stringify(contentGraph,null,'\t');
@@ -163,7 +202,8 @@ app.get('/panels',async function(req,res,next){
 })
 
 app.get('/showJSON', async function(req,res,next){
-  let content = await axios.get("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
+  console.log("http://"+ req.query.vse +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
+  let content = await axios.get("http://"+ req.query.vse +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
   await getImgData(content.data['@graph']);
   var contentGraph = amp.inlineContent(content.data);
   var stringContent = JSON.stringify(contentGraph,null,'\t');
@@ -175,4 +215,48 @@ app.get('/showJSON', async function(req,res,next){
     stringContent:stringContent,
     query:req.query
   })
+})
+
+app.get('/draping', async function(req,res,next){
+  console.log("http://"+ req.query.vse +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
+  let content = await axios.get("http://"+ req.query.vse +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
+  await getImgData(content.data['@graph']);
+  var contentGraph = amp.inlineContent(content.data);
+  var svgData = contentGraph[0].SVG
+  console.log("https://"+imgSrc+"/i/"+svgData.endpoint+"/"+svgData.name);
+  axios({
+    method:"get",
+    url:"https://"+imgSrc+"/i/"+svgData.endpoint+"/"+svgData.name+".svg",
+    headers:{
+      "Content-Type":"image/svg+xml",
+      "Accept":"application/octet-stream"
+    }
+  })
+  .then(function(response){
+    // console.log("GET response:")
+    // console.log(response)
+    axios({
+      method:"post",
+      headers:{
+        "cache-control":"no-cache",
+        "Accept":"application/octet-stream",
+        "Content-Type":"image/svg+xml"
+      },
+      url:"https://draping-convert.dev.adis.ws/svgToAMPD",
+      body:Buffer.from(response.data,'utf8').toString('binary')
+    })
+    .then(function(convertedResponse){
+      console.log("convert SVG 200")
+    })
+    .catch(function(error){
+      console.log("convert SVG Error")
+      console.log(error)
+    })
+  })
+  .catch(function(error){
+    console.log("request SVG Error")
+    console.log(error)
+  })
+  // let ampD = await axios.post("https://draping-convert.dev.adis.ws/svgToAMPD")
+  var stringContent = JSON.stringify(contentGraph,null,'\t');
 })
