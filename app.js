@@ -13,6 +13,7 @@ var hbs = require('handlebars');
 var expressHbs = require('express-handlebars');
 var helpers = require('handlebars-helpers')(['array', 'object', 'comparison','regex']);
 var axios = require('axios')
+var formidable = require('formidable')
 
 var app = express();
 app.use('/static', express.static(path.join(__dirname,'/static')));
@@ -217,46 +218,151 @@ app.get('/showJSON', async function(req,res,next){
   })
 })
 
+
+
+
+app.get('/upload-svg',function(req,res){
+  res.render('upload-svg',{
+    static_path:'/static',
+    theme:process.env.THEME || 'flatly',
+    pageTitle : "Upload SVG",
+    pageDescription : "Upload SVG",
+    query:req.query
+  })
+})
+app.post('/submit-form', (req,res,next) => {
+      new formidable.IncomingForm().parse(req, function(err,fields, files){
+        var oldpath = files.document.path;
+        var newpath = path.join(__dirname,'/static/') + files.document.name;
+        fs.rename(oldpath, newpath, function (err) {
+          if (err) throw err;
+          console.log('File uploaded and moved!');
+          request({
+            url: 'https://draping-convert.dev.adis.ws/svgToAMPD',
+            method: 'POST',
+            headers: {
+              'cache-control': 'no-cache',
+              'content-type' : 'image/svg+xml'
+            },
+            encoding: null,
+            body: fs.createReadStream(newpath)
+           }, (error, response, body) => {
+                if (error) {
+                   res.send(error)
+                } else {
+                  res.send(response.body)
+                }
+           });
+          /* axios({
+            method:"post",
+            headers:{
+              "Content-Type":"image/svg+xml"
+            },
+            url:"https://draping-convert.dev.adis.ws/svgToAMPD",
+            body:fs.createReadStream(newpath)
+          })
+          .then(function(convertedResponse){
+            console.log("convert SVG 200")
+            console.log(converterResponse)
+          })
+          .catch(function(error){
+            console.log("convert SVG Error")
+            console.log(error)
+          }) */
+
+        });
+
+      })
+    })
+
+
 app.get('/draping', async function(req,res,next){
-  console.log("http://"+ req.query.vse +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
+  // console.log("http://"+ req.query.vse +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
   let content = await axios.get("http://"+ req.query.vse +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
-  await getImgData(content.data['@graph']);
+  // await getImgData(content.data['@graph']);
   var contentGraph = amp.inlineContent(content.data);
   var svgData = contentGraph[0].SVG
-  console.log("https://"+imgSrc+"/i/"+svgData.endpoint+"/"+svgData.name);
-  axios({
-    method:"get",
-    url:"https://"+imgSrc+"/i/"+svgData.endpoint+"/"+svgData.name+".svg",
-    headers:{
-      "Content-Type":"image/svg+xml",
-      "Accept":"application/octet-stream"
+  var textureData = contentGraph[0].Textures
+  var newpath = path.join(__dirname,'/static/') + svgData.name + ".svg";
+  var file = fs.createWriteStream(newpath)
+  const svgReq = request.get("https://"+imgSrc+"/i/"+svgData.endpoint+"/"+svgData.name+".svg")
+  svgReq.on('response',function(response){
+    if (response.statusCode !== 200) {
+        console.log('Response status was ' + response.statusCode);
     }
+    console.log('Response status was ' + response.statusCode)
+    svgReq.pipe(file);
   })
-  .then(function(response){
-    // console.log("GET response:")
-    // console.log(response)
-    axios({
-      method:"post",
-      headers:{
-        "cache-control":"no-cache",
-        "Accept":"application/octet-stream",
-        "Content-Type":"image/svg+xml"
-      },
-      url:"https://draping-convert.dev.adis.ws/svgToAMPD",
-      body:Buffer.from(response.data,'utf8').toString('binary')
-    })
-    .then(function(convertedResponse){
-      console.log("convert SVG 200")
-    })
-    .catch(function(error){
-      console.log("convert SVG Error")
-      console.log(error)
-    })
-  })
-  .catch(function(error){
-    console.log("request SVG Error")
-    console.log(error)
-  })
-  // let ampD = await axios.post("https://draping-convert.dev.adis.ws/svgToAMPD")
+  file.on('finish', function() {
+    file.close(function(){
+      console.log("file saved to server")
+      request({
+        url: 'https://draping-convert.dev.adis.ws/svgToAMPD',
+        method: 'POST',
+        headers: {
+          'cache-control': 'no-cache',
+          'content-type' : 'image/svg+xml'
+        },
+        encoding: null,
+        body: fs.createReadStream(newpath)
+       }, (error, response, body) => {
+            if (error) {
+               res.send(error)
+            } else {
+              var ampD = response.body.toString('utf8')
+              texturePathArray = []
+              textureData.forEach(function(texture){
+                texturePathArray.push("https://"+imgSrc+"/i/"+texture.endpoint+"/"+texture.name)
+              })
+              console.log(JSON.stringify({
+                "ampd":ampD,
+                "textures": texturePathArray,
+                "format": "jpg",
+                "lossyQuality": 80
+              }))
+              request({
+                url: 'https://draping.dev.adis.ws/renderUrls',
+                method: 'POST',
+                headers: {
+                  'cache-control': 'no-cache',
+                  'Content-Type' : 'application/json'
+                },
+                encoding: null,
+                body: {
+                  "ampd":ampD,
+                  "textures": texturePathArray,
+                  "format": "jpg",
+                  "lossyQuality": 80
+                },
+                json:true
+              }, (renderError, renderResponse, renderBody) => {
+                    if (error) {
+                       res.send(renderError)
+                    } else {
+
+                      res.render('draping',{
+                        static_path:'/static',
+                        theme:process.env.THEME || 'flatly',
+                        pageTitle : "Upload SVG",
+                        pageDescription : "Upload SVG",
+                        query:req.query,
+                        imageData:renderResponse.body.toString('base64')
+                      })
+                    }
+               });
+            }
+       });
+    });
+  });
+
+  svgReq.on('error', (err) => {
+    fs.unlink(newpath);
+    console.log(err.message);
+  });
+
+  file.on('error', (err) => { // Handle errors
+      fs.unlink(newpath); // Delete the file async. (But we don't check the result)
+      console.log(err.message);
+  });
   var stringContent = JSON.stringify(contentGraph,null,'\t');
 })
