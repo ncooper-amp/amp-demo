@@ -55,20 +55,20 @@ rm csr.pem
 
 */
 
-var options = {
+/* var options = {
   key: fs.readFileSync('key.pem'),
   cert: fs.readFileSync('cert.pem')
 };
 
 
-
+var sectureServer = https.createServer(options,app).listen(securePort, function() {
+  console.log('Server running at http://127.0.0.1:' + securePort + '/')
+})
+*/
 var server = http.createServer(app).listen(port, function() {
   console.log('Server running at http://127.0.0.1:' + port + '/')
 })
 
-var sectureServer = https.createServer(options,app).listen(securePort, function() {
-  console.log('Server running at http://127.0.0.1:' + securePort + '/')
-})
 
 
 var vseEnvironment = process.env.VSE_ENV
@@ -319,17 +319,17 @@ app.get('/draping', async function(req,res,next){
                 glmatrix.mat2d.scale(tmat, tmat, [texture.scaleX, texture.scaleY]);
                 glmatrix.mat2d.rotate(tmat, tmat, texture.rotation);
                 glmatrix.mat2d.translate(tmat, tmat, [texture.offsetX, texture.offsetY]);
-                console.log(glmatrix.mat3.fromMat2d(glmatrix.mat3.create(), tmat));
+                // console.log(glmatrix.mat3.fromMat2d(glmatrix.mat3.create(), tmat));
                 textureMatricesArray.push(Array.from(glmatrix.mat3.fromMat2d(glmatrix.mat3.create(), tmat)))
               })
 
-              console.log(JSON.stringify({
-                "ampd":ampD,
-                "textures": texturePathArray,
-                "textureMatrices":textureMatricesArray,
-                "format": "jpg",
-                "lossyQuality": 80
-              }))
+              //console.log(JSON.stringify({
+              //  "ampd":ampD,
+              //  "textures": texturePathArray,
+              //  "textureMatrices":textureMatricesArray,
+              //  "format": "jpg",
+              //  "lossyQuality": 80
+              //}))
               request({
                 url: 'https://draping.dev.adis.ws/renderUrls',
                 method: 'POST',
