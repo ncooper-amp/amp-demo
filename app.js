@@ -14,6 +14,7 @@ var expressHbs = require('express-handlebars');
 var helpers = require('handlebars-helpers')(['array', 'object', 'comparison','regex']);
 var axios = require('axios')
 var formidable = require('formidable')
+var glmatrix = require('gl-matrix')
 
 var app = express();
 app.use('/static', express.static(path.join(__dirname,'/static')));
@@ -311,12 +312,21 @@ app.get('/draping', async function(req,res,next){
             } else {
               var ampD = response.body.toString('utf8')
               texturePathArray = []
+              textureMatricesArray = []
               textureData.forEach(function(texture){
-                texturePathArray.push("https://"+imgSrc+"/i/"+texture.endpoint+"/"+texture.name)
+                texturePathArray.push("https://"+imgSrc+"/i/"+texture.Texture.endpoint+"/"+texture.Texture.name)
+                const tmat = glmatrix.mat2d.fromTranslation(glmatrix.mat2d.create(), [0.5, 0.5]);
+                glmatrix.mat2d.scale(tmat, tmat, [texture.scaleX, texture.scaleY]);
+                glmatrix.mat2d.rotate(tmat, tmat, texture.rotation);
+                glmatrix.mat2d.translate(tmat, tmat, [texture.offsetX, texture.offsetY]);
+                console.log(glmatrix.mat3.fromMat2d(glmatrix.mat3.create(), tmat));
+                textureMatricesArray.push(Array.from(glmatrix.mat3.fromMat2d(glmatrix.mat3.create(), tmat)))
               })
+
               console.log(JSON.stringify({
                 "ampd":ampD,
                 "textures": texturePathArray,
+                "textureMatrices":textureMatricesArray,
                 "format": "jpg",
                 "lossyQuality": 80
               }))
@@ -331,6 +341,7 @@ app.get('/draping', async function(req,res,next){
                 body: {
                   "ampd":ampD,
                   "textures": texturePathArray,
+                  "textureMatrices":textureMatricesArray,
                   "format": "jpg",
                   "lossyQuality": 80
                 },
