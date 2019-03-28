@@ -120,8 +120,9 @@ const getImgData = async function (graph) {
 }
 
 app.get('/',async function(req,res,next){
-  console.log("http://"+ req.query.vse +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
-  let content = await axios.get("http://"+ req.query.vse +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
+  vseEnvironment = req.query.vse || process.env.VSE_ENV
+  console.log("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
+  let content = await axios.get("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
   await getImgData(content.data['@graph']);
   var contentGraph = amp.inlineContent(content.data);
   var stringContent = JSON.stringify(contentGraph,null,'\t');
@@ -172,8 +173,9 @@ app.get('/ListContentItems/:size/:page', function (req, res, next) {
 })
 
 app.get('/carousel',async function(req,res,next){
-  console.log("http://"+ req.query.vse +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store);
-  let content = await axios.get("http://"+ req.query.vse +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
+  vseEnvironment = req.query.vse || process.env.VSE_ENV
+  console.log("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store);
+  let content = await axios.get("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
   await getImgData(content.data['@graph']);
   var contentGraph = amp.inlineContent(content.data);
   var stringContent = JSON.stringify(contentGraph,null,'\t');
@@ -190,7 +192,9 @@ app.get('/carousel',async function(req,res,next){
 
 
 app.get('/panels',async function(req,res,next){
-  let content = await axios.get("http://"+ req.query.vse +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
+  vseEnvironment = req.query.vse || process.env.VSE_ENV
+  console.error("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
+  let content = await axios.get("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
   await getImgData(content.data['@graph']);
   var contentGraph = amp.inlineContent(content.data);
   var stringContent = JSON.stringify(contentGraph,null,'\t');
@@ -205,8 +209,9 @@ app.get('/panels',async function(req,res,next){
 })
 
 app.get('/showJSON', async function(req,res,next){
-  console.log("http://"+ req.query.vse +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
-  let content = await axios.get("http://"+ req.query.vse +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
+  vseEnvironment = req.query.vse || process.env.VSE_ENV
+  console.log("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
+  let content = await axios.get("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
   await getImgData(content.data['@graph']);
   var contentGraph = amp.inlineContent(content.data);
   var stringContent = JSON.stringify(contentGraph,null,'\t');
@@ -403,8 +408,9 @@ const renderDrape = function(ampD,textureObj,req,res){
 }
 
 app.get('/draping', async function(req,res,next){
+  vseEnvironment = req.query.vse || process.env.VSE_ENV
   // console.log("http://"+ req.query.vse +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
-  let content = await axios.get("http://"+ req.query.vse +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
+  let content = await axios.get("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
   // await getImgData(content.data['@graph']);
   var contentGraph = amp.inlineContent(content.data);
   var svgData = contentGraph[0].SVG
