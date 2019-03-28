@@ -9,7 +9,7 @@
       {{#each this}}
         {{#if (eq @key 'content-items')}}
           {{#each this}}
-            <a href="http://127.0.0.1:3000?id={{this.id}}&store=cmslabs">{{this.label}}</a><br />
+            <a href="/?id={{this.id}}&store=cmslabs">{{this.label}}</a><br />
           {{/each}}
         {{/if}}
       {{/each}}
