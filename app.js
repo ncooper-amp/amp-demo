@@ -65,6 +65,7 @@ var sectureServer = https.createServer(options,app).listen(securePort, function(
   console.log('Server running at http://127.0.0.1:' + securePort + '/')
 })
 */
+
 var server = http.createServer(app).listen(port, function() {
   console.log('Server running at http://127.0.0.1:' + port + '/')
 })
@@ -276,6 +277,130 @@ app.post('/submit-form', (req,res,next) => {
       })
     })
 
+const patchAMPDValue = function(authToken,contentItem,req,ampD){
+  axios({
+    method:"patch",
+    url:"http://"+cmsEnvironment+"/content-items/"+req.query.id,
+    headers:{
+      "Authorization":"Bearer "+ authToken,
+      "Content-Type":"application/json"
+    },
+    data:{
+      "body": {
+        "_meta": contentItem.data.body._meta,
+        "SVG": contentItem.data.body.SVG,
+        "Textures": contentItem.data.body.Textures,
+        "AMPD":ampD
+      },
+      "version":contentItem.data.version
+    }
+  })
+  .then(patchItemResp => {
+    console.log(patchItemResp.config)
+  })
+  .catch(patchItemErr=>{
+    console.log("Full Error:")
+    console.log(patchItemErr)
+    console.log("patch body")
+    console.log(JSON.stringify(patchItemErr.config.body))
+  })
+}
+
+const getContentItem = function(authToken,req){
+  return new Promise(function(resolve, reject){
+    axios({
+      method:"get",
+      url:"http://"+cmsEnvironment+"/content-items/"+req.query.id,
+      headers:{
+        "Authorization":"Bearer "+ authToken,
+        "Content-Type":"application/json"
+      }
+    })
+    .then(getItemResp =>{
+      resolve(getItemResp);
+    })
+    .catch(getItemErr =>{
+      reject(getItemErr)
+    })
+  })
+};
+
+const postSvgToAMPD = function(svgPath){
+  return new Promise(function(resolve, reject){
+    request({
+      url: 'https://draping-convert.dev.adis.ws/svgToAMPD',
+      method: 'POST',
+      headers: {
+        'cache-control': 'no-cache',
+        'content-type' : 'image/svg+xml'
+      },
+      encoding: null,
+      body: fs.createReadStream(svgPath)
+    }, (error, response, body) => {
+    if (error) {
+        reject(error)
+    }
+    else {
+       ampD = response.body.toString('utf8')
+       resolve(ampD);
+    }
+   })
+  })
+}
+
+const createTextureArray = function(tetureObj){
+    texturePathArray = []
+    tetureObj.forEach(function(texture){
+      texturePathArray.push("https://"+imgSrc+"/i/"+texture.Texture.endpoint+"/"+texture.Texture.name)
+    })
+    return texturePathArray
+}
+const createTextureMatricesArray = function(tetureObj){
+    textureMatricesArray = []
+    tetureObj.forEach(function(texture){
+      const tmat = glmatrix.mat2d.fromTranslation(glmatrix.mat2d.create(), [0.5, 0.5]);
+      glmatrix.mat2d.scale(tmat, tmat, [texture.scaleX, texture.scaleY]);
+      glmatrix.mat2d.rotate(tmat, tmat, texture.rotation);
+      glmatrix.mat2d.translate(tmat, tmat, [texture.offsetX, texture.offsetY]);
+      // console.log(glmatrix.mat3.fromMat2d(glmatrix.mat3.create(), tmat));
+      textureMatricesArray.push(Array.from(glmatrix.mat3.fromMat2d(glmatrix.mat3.create(), tmat)))
+    })
+    return textureMatricesArray
+}
+
+const renderDrape = function(ampD,textureObj,req,res){
+  request({
+    url: 'https://draping.dev.adis.ws/renderUrls',
+    method: 'POST',
+    headers: {
+      'cache-control': 'no-cache',
+      'Content-Type' : 'application/json'
+    },
+    encoding: null,
+    body: {
+      "ampd":ampD,
+      "textures": createTextureArray(textureObj),
+      "textureMatrices":createTextureMatricesArray(textureObj),
+      "format": "jpg",
+      "lossyQuality": 80
+    },
+    json:true
+    }, (renderError, renderResponse, renderBody) => {
+          if (renderError) {
+             res.send(renderError)
+          } else {
+
+            res.render('draping',{
+              static_path:'/static',
+              theme:process.env.THEME || 'flatly',
+              pageTitle : "Upload SVG",
+              pageDescription : "Upload SVG",
+              query:req.query,
+              imageData:renderResponse.body.toString('base64')
+            })
+          }
+     });
+}
 
 app.get('/draping', async function(req,res,next){
   // console.log("http://"+ req.query.vse +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
@@ -285,95 +410,70 @@ app.get('/draping', async function(req,res,next){
   var svgData = contentGraph[0].SVG
   var textureData = contentGraph[0].Textures
   var newpath = path.join(__dirname,'/static/') + svgData.name + ".svg";
-  var file = fs.createWriteStream(newpath)
-  const svgReq = request.get("https://"+imgSrc+"/i/"+svgData.endpoint+"/"+svgData.name+".svg")
-  svgReq.on('response',function(response){
-    if (response.statusCode !== 200) {
-        console.log('Response status was ' + response.statusCode);
+  if (typeof contentGraph[0].AMPD !== 'undefined'){
+    if (contentGraph[0].AMPD.indexOf('ampd') > 1){
+      /* getAuthToken().then(authToken =>{
+        getContentItem(authToken,req).then(getItemResp =>{
+          patchAMPDValue(authToken,getItemResp,req,ampD)
+        })
+        .catch(getItemErr => {
+          console.log(getItemErr)
+        })
+      })
+      .catch(getAuthTokenError => {
+        console.log(getAuthTokenError)
+      }) */
+      renderDrape(contentGraph[0].AMPD,textureData,req,res)
     }
-    console.log('Response status was ' + response.statusCode)
-    svgReq.pipe(file);
-  })
-  file.on('finish', function() {
-    file.close(function(){
-      console.log("file saved to server")
-      request({
-        url: 'https://draping-convert.dev.adis.ws/svgToAMPD',
-        method: 'POST',
-        headers: {
-          'cache-control': 'no-cache',
-          'content-type' : 'image/svg+xml'
-        },
-        encoding: null,
-        body: fs.createReadStream(newpath)
-       }, (error, response, body) => {
-            if (error) {
-               res.send(error)
-            } else {
-              var ampD = response.body.toString('utf8')
-              texturePathArray = []
-              textureMatricesArray = []
-              textureData.forEach(function(texture){
-                texturePathArray.push("https://"+imgSrc+"/i/"+texture.Texture.endpoint+"/"+texture.Texture.name)
-                const tmat = glmatrix.mat2d.fromTranslation(glmatrix.mat2d.create(), [0.5, 0.5]);
-                glmatrix.mat2d.scale(tmat, tmat, [texture.scaleX, texture.scaleY]);
-                glmatrix.mat2d.rotate(tmat, tmat, texture.rotation);
-                glmatrix.mat2d.translate(tmat, tmat, [texture.offsetX, texture.offsetY]);
-                // console.log(glmatrix.mat3.fromMat2d(glmatrix.mat3.create(), tmat));
-                textureMatricesArray.push(Array.from(glmatrix.mat3.fromMat2d(glmatrix.mat3.create(), tmat)))
-              })
+  }
+  else {
+    var file = fs.createWriteStream(newpath)
+    const svgReq = request.get("https://"+imgSrc+"/i/"+svgData.endpoint+"/"+svgData.name+".svg")
+    svgReq.on('response',function(response){
+      if (response.statusCode !== 200) {
+          console.log('Response status was ' + response.statusCode);
+      }
+      console.log('Response status was ' + response.statusCode)
+      svgReq.pipe(file);
+    })
+    file.on('finish', function() {
+      file.close(function(){
+        console.log("file saved to server")
+         postSvgToAMPD(newpath).then(ampD => {
+          getAuthToken().then(authToken =>{
+            getContentItem(authToken,req).then(getItemResp =>{
+              patchAMPDValue(authToken,getItemResp,req,ampD)
+            })
+            .catch(getItemErr => {
+              console.log(getItemErr)
+            })
+          })
+          .catch(getAuthTokenError => {
+            console.log(getAuthTokenError)
+          })
 
-              //console.log(JSON.stringify({
-              //  "ampd":ampD,
-              //  "textures": texturePathArray,
-              //  "textureMatrices":textureMatricesArray,
-              //  "format": "jpg",
-              //  "lossyQuality": 80
-              //}))
-              request({
-                url: 'https://draping.dev.adis.ws/renderUrls',
-                method: 'POST',
-                headers: {
-                  'cache-control': 'no-cache',
-                  'Content-Type' : 'application/json'
-                },
-                encoding: null,
-                body: {
-                  "ampd":ampD,
-                  "textures": texturePathArray,
-                  "textureMatrices":textureMatricesArray,
-                  "format": "jpg",
-                  "lossyQuality": 80
-                },
-                json:true
-              }, (renderError, renderResponse, renderBody) => {
-                    if (error) {
-                       res.send(renderError)
-                    } else {
+          renderDrape(ampD,textureData,req,res)
 
-                      res.render('draping',{
-                        static_path:'/static',
-                        theme:process.env.THEME || 'flatly',
-                        pageTitle : "Upload SVG",
-                        pageDescription : "Upload SVG",
-                        query:req.query,
-                        imageData:renderResponse.body.toString('base64')
-                      })
-                    }
-               });
-            }
-       });
+        })
+        .catch(postSvgToAMPDErr => {
+          console.log(postSvgToAMPDErr)
+        })
+
+      });
     });
-  });
 
-  svgReq.on('error', (err) => {
-    fs.unlink(newpath);
-    console.log(err.message);
-  });
-
-  file.on('error', (err) => { // Handle errors
-      fs.unlink(newpath); // Delete the file async. (But we don't check the result)
+    svgReq.on('error', (err) => {
+      fs.unlink(newpath);
       console.log(err.message);
-  });
+    });
+
+    file.on('error', (err) => { // Handle errors
+        fs.unlink(newpath); // Delete the file async. (But we don't check the result)
+        console.log(err.message);
+    });
+
+  }
+
+
   var stringContent = JSON.stringify(contentGraph,null,'\t');
 })

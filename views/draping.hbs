@@ -4,7 +4,12 @@
 
 
   <div class="col-12">
+    {{#if error }}
+      {{ error }}
+    {{/if}}
+    {{#if imageData }}
     <img class="img-fluid" src="data:img/png;base64,{{imageData}}" border=0 />
+    {{/if}}
   </div>
 
     {{> footer }}
