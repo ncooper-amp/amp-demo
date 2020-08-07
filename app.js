@@ -32,6 +32,12 @@ app.use(bodyParser.urlencoded({extended:false}));
 app.use(expressValidator());
 app.set('node_modules', __dirname + '/node_modules');
 app.set('models', __dirname + '/models');
+app.use((req,res,next) => {
+  res.append("Accept-CH","DPR, Width, Viewport-Width, RTT, ECT, Downlink");
+  res.append("Accept-CH-Lifetime","86400");
+  res.append("Vary","DPR, Width, Viewport-Width, RTT, ECT, Downlink");
+  next();
+})
 
 /*
 
@@ -126,13 +132,15 @@ app.get('/',async function(req,res,next){
   await getImgData(content.data['@graph']);
   var contentGraph = amp.inlineContent(content.data);
   var stringContent = JSON.stringify(contentGraph,null,'\t');
+  // console.log(req);
   res.render('homepage',{
     static_path:'/static',
     theme:process.env.THEME || 'flatly',
     pageTitle : "HomePage",
     pageDescription : "Homepage",
     query:req.query,
-    content:contentGraph[0]
+    content:contentGraph[0],
+    viewport:req.headers['viewport-width']
   })
 })
 
@@ -193,18 +201,25 @@ app.get('/carousel',async function(req,res,next){
 
 app.get('/panels',async function(req,res,next){
   vseEnvironment = req.query.vse || process.env.VSE_ENV
-  console.error("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
+  // console.error("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
   let content = await axios.get("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
   await getImgData(content.data['@graph']);
   var contentGraph = amp.inlineContent(content.data);
   var stringContent = JSON.stringify(contentGraph,null,'\t');
+  console.log(JSON.stringify(req.headers));
   res.render('panels',{
     static_path:'/static',
     theme:process.env.THEME || 'flatly',
     pageTitle : "HomePage",
     pageDescription : "Homepage",
     query:req.query,
-    content:contentGraph[0]
+    content:contentGraph[0],
+    productName: "This is a Dumb Product",
+    dpr:req.headers.dpr,
+    "viewport-width":req.headers["viewport-width"],
+    rtt:req.headers.rtt,
+    downlink:req.headers.downlink,
+    ect:req.headers.ect
   })
 })
 
@@ -237,6 +252,39 @@ app.get('/upload-svg',function(req,res){
     query:req.query
   })
 })
+
+app.get('/pdp',function(req,res){
+  res.render('pdp',{
+    static_path:'/static',
+    theme:process.env.THEME || 'flatly',
+    pageTitle : "Upload SVG",
+    pageDescription : "Upload SVG",
+    query:req.query,
+    content:contentGraph[0],
+    prod:{
+      name:"Some Dumb Product Name",
+      price:{
+        now:"£1.99",
+        was:"£3.99",
+        saving:"£2"
+      },
+      swatches:[
+        {
+          textureID:123,
+          textureSrc:"http://someimgref",
+          textureName:"Woodyness"
+        },
+        {
+          textureID:456,
+          textureSrc:"http://imgref456",
+          textureName:"Metalness"
+        }
+      ]
+    }
+  })
+})
+
+
 app.post('/submit-form', (req,res,next) => {
       new formidable.IncomingForm().parse(req, function(err,fields, files){
         var oldpath = files.document.path;

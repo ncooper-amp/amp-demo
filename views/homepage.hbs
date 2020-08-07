@@ -4,9 +4,11 @@
   {{> hero }}
 {{/if}}
 
+{{viewport}}
+
 {{#if (eq content.[@type] 'http://c1-qa.adis.ws/c/cmslabs/image-block')}}
   <div class="col-12">
-    <img class="img-fluid" src="http://{{content.image.defaultHost}}/i/{{content.image.endpoint}}/{{content.image.name}}" border=0 />
+    <img class="img-fluid" src="http://{{content.image.defaultHost}}/i/{{content.image.endpoint}}/{{content.image.name}}?w={{viewport}}" border=0 />
   </div>
 {{/if}}
 
