@@ -1,0 +1,47 @@
+
+{{> header }}
+
+
+    {{#if error }}
+      <div class="col-12">
+          {{ error }}
+      </div>
+    {{/if}}
+  <div class="row">
+    <div class="col-12">
+      <h1>{{ prod.name }}</h1>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-6">
+      {{> slides }}
+    </div>
+    <div class="col-6">
+        <h3>{{ prod.name }}</h3>
+        <h4>{{ prod.price.now }}</h4>
+        {{#if prod.price.was }}
+          <h5 class="wasPrice">{{ prod.price.now }}</h4>
+          <h4 class="saving">{{ prod.price.saving }}</h4>
+        {{/if}}
+        <div class="col-12" id="swatchPanel">
+          {{#each prod.swatches }}
+            <div class="col-3">
+              <a href="" id="textureSwatch-{{this.textureID}}"><img src="{{ this.textureSrc }}" alt="{{this.textureName}}" /></a>
+            </div>
+          {{/each}}
+        </div>
+    </div>
+  </div>
+
+    {{> footer }}
+
+    <script type="text/javascript">
+
+      $(document).ready(function() {
+        $('a').click(function(){
+          // pass the texture and the SVG to the rendering service endpoint and update the main image to reflect.
+        })
+      })
+    </script>
+  </body>
+</html>
