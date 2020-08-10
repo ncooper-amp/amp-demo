@@ -34,8 +34,8 @@ app.set('node_modules', __dirname + '/node_modules');
 app.set('models', __dirname + '/models');
 app.use((req,res,next) => {
   res.append("Accept-CH","DPR, Width, Viewport-Width, RTT, ECT, Downlink");
-  res.append("Accept-CH-Lifetime","86400");
   res.append("Vary","DPR, Width, Viewport-Width, RTT, ECT, Downlink");
+  // res.append("Feature-Policy","ch-dpr http://sjyqzbody3qw1lq6zeetg5clj.staging.bigcontent.io; ch-width http://sjyqzbody3qw1lq6zeetg5clj.staging.bigcontent.io; ch-viewport-width http://sjyqzbody3qw1lq6zeetg5clj.staging.bigcontent.io;");
   next();
 })
 
@@ -60,12 +60,11 @@ openssl x509 -req -days 9999 -in csr.pem -signkey key.pem -out cert.pem
 rm csr.pem
 
 */
-
-/* var options = {
+/*
+var options = {
   key: fs.readFileSync('key.pem'),
   cert: fs.readFileSync('cert.pem')
 };
-
 
 var sectureServer = https.createServer(options,app).listen(securePort, function() {
   console.log('Server running at http://127.0.0.1:' + securePort + '/')
@@ -115,6 +114,13 @@ const getAuthToken = function(){
   })
 };
 
+app.get('/retrieveImage/:name', function(req,res,next){
+  console.log(req.headers);
+  var image = "http://sjyqzbody3qw1lq6zeetg5clj.staging.bigcontent.io/i/bccdemo/" + req.params.name + "?w=" + req.headers.width;
+      console.log(image); // captures correctly the image name
+      req.pipe(request(image)).pipe(res)
+})
+
 const getImgData = async function (graph) {
     let promises = [];
     for (var i = 0; i < graph.length; i++) {
@@ -132,6 +138,7 @@ app.get('/',async function(req,res,next){
   await getImgData(content.data['@graph']);
   var contentGraph = amp.inlineContent(content.data);
   var stringContent = JSON.stringify(contentGraph,null,'\t');
+  console.log("viewport-width: " + req.headers['viewport-width'] + "\n")
   // console.log(req);
   res.render('homepage',{
     static_path:'/static',
