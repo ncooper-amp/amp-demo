@@ -15,12 +15,10 @@
     "gl-matrix": "^3.0.0",
     "handlebars": "^4.0.12",
     "handlebars-helpers": "^0.10.0",
-    "nodemon": "^1.18.11",
     "path": "latest",
     "request": "latest"
   },
   "scripts": {
-    "start": "VSE_ENV=1qz82p23foo881fqodw5xk92vk.staging-content-uat.dev.adis.ws V1_VSE_ENV=3hpb2x6qxn4i1c8lmycbvy4fv.staging-content-uat.dev.adis.ws OLD_VSE_ENV=n5usznxubzr61e5yxdguiab9y.staging-content-uat.dev.adis.ws REPO_ID=5a7b140cc9e77c0001662ecb CMS_PROD=apigee-test.adis.ws/v2/content CMS_UAT=apigee-test.adis.ws/v2/content USERNAME=cmsuat@amplience.com PASSWORD=z4XMx97K CLIENT=B8F76643-CF4B-4A86-B03F-2F026B88693B KEY=b9886db9-0ad9-4bd7-b978-a3248851d875 SECRET=81c88f2994ce8d39f20f0d626fcf0bd260f27a59fa9aecf4933701d0ea5d5582 ENDPOINT=cmslabs IMGSRC=i1-qa.adis.ws nodemon app.js",
-    "prod": " VSE_ENV=uat-content.adis.ws V1_VSE_ENV=3hpb2x6qxn4i1c8lmycbvy4fv.staging-content-uat.dev.adis.ws OLD_VSE_ENV=n5usznxubzr61e5yxdguiab9y.staging-content-uat.dev.adis.ws REPO_ID=5a7b140cc9e77c0001662ecb CMS_PROD=apigee-test.adis.ws/v2/content CMS_UAT=apigee-test.adis.ws/v2/content USERNAME=cmsuat@amplience.com PASSWORD=z4XMx97K CLIENT=B8F76643-CF4B-4A86-B03F-2F026B88693B KEY=b9886db9-0ad9-4bd7-b978-a3248851d875 SECRET=81c88f2994ce8d39f20f0d626fcf0bd260f27a59fa9aecf4933701d0ea5d5582 ENDPOINT=bccdemo IMGSRC=i1.adis.ws nodemon app.js"
+    "start": "node app.js"
   }
 }

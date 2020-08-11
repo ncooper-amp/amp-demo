@@ -10,11 +10,11 @@
         {{#if (eq @key 'content-items')}}
           {{#each this}}
             {{#if (eq this.body._meta.schema 'http://www.coops.net/draping-config')}}
-              <a href="/draping?id={{this.id}}&store=cmslabs">{{this.label}}</a><br />
+              <a href="/draping?id={{this.id}}&store=bccdemo">{{this.label}}</a><br />
             {{else if (eq this.body._meta.schema 'http://c1-qa.adis.ws/c/cmslabs/content-stack')}}
-              <a href="/panels?id={{this.id}}&store=cmslabs">{{this.label}}</a><br />
+              <a href="/panels?id={{this.id}}&store=bccdemo">{{this.label}}</a><br />
             {{else}}
-              <a href="/?id={{this.id}}&store=cmslabs">{{this.label}}</a><br />
+              <a href="/?id={{this.id}}&store=bccdemo">{{this.label}}</a><br />
             {{/if}}
             
           {{/each}}

@@ -93,15 +93,11 @@ const getAuthToken = function(){
   return new Promise(function(resolve, reject){
     axios({
       method:"post",
-      url:"https://auth-qa3.adis.ws/oauth/token",
-      headers:{
-        "Content-Type":"application/x-www-form-urlencoded"
-      },
+      url:"https://auth.adis.ws/oauth/token",
       params:{
-        username:userName,
-        password:passWord,
         client_id:clientId,
-        grant_type:"password",
+        client_secret:apiSecret,
+        grant_type:"client_credentials",
       }
     })
     .then(response => {
@@ -157,7 +153,7 @@ app.get('/ListContentItems/:size/:page', function (req, res, next) {
         getAuthToken().then(authToken =>{
           axios({
             method:"get",
-            url: "http://"+cmsEnvironment+"/content-repositories/"+respositoryId+"/content-items?page="+req.params.page+"&size="+req.params.size,
+            url: "https://"+cmsEnvironment+"/content-repositories/"+respositoryId+"/content-items?page="+req.params.page+"&size="+req.params.size,
             headers:{
               "Authorization": "Bearer " + authToken
             }
@@ -165,7 +161,7 @@ app.get('/ListContentItems/:size/:page', function (req, res, next) {
             .then(response => {
               var contentGraph = response.data;
               stringContent = JSON.stringify(response.data,null,'\t');
-              //console.log(response);
+              console.log(response);
               res.render('list-content-items',{'title':'List Content Items - Success','contentGraph': contentGraph, 'stringContent' : stringContent, 'reqParams': req.query});
             })
             .catch(error => {
