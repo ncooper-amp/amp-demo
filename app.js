@@ -169,11 +169,11 @@ app.get('/ListContentItems/:size/:page', function (req, res, next) {
               var contentGraph = response.data;
               stringContent = JSON.stringify(response.data,null,'\t');
               console.log(response);
-              res.render('list-content-items',{'title':'List Content Items - Success','contentGraph': contentGraph, 'stringContent' : stringContent, 'reqParams': req.query});
+              res.render('list-content-items',{'pageTitle':'List Content Items - Success','contentGraph': contentGraph, 'stringContent' : stringContent, 'reqParams': req.query});
             })
             .catch(error => {
               console.log(error);
-              res.render('list-content-items',{'title':'List Content Items - Fail','reqParams': req.query, 'error':error});
+              res.render('list-content-items',{'pageTitle':'List Content Items - Fail','reqParams': req.query, 'error':error});
             });
         })
         .catch(error => {
