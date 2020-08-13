@@ -168,7 +168,7 @@ app.get('/ListContentItems/:size/:page', function (req, res, next) {
             .then(response => {
               var contentGraph = response.data;
               stringContent = JSON.stringify(response.data,null,'\t');
-              console.log(response);
+              console.log(stringContent);
               res.render('list-content-items',{'pageTitle':'List Content Items - Success','contentGraph': contentGraph, 'stringContent' : stringContent, 'reqParams': req.query});
             })
             .catch(error => {
