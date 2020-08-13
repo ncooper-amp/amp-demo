@@ -1,6 +1,10 @@
 {
   "name": "Amplience-Demo-Site",
   "version": "0.0.1",
+  "engines":{
+    "node":"10.15.3",
+    "npm":"6.9.0"
+  },
   "private": true,
   "dependencies": {
     "async": "^2.5.0",
@@ -15,10 +19,13 @@
     "gl-matrix": "^3.0.0",
     "handlebars": "^4.3.0",
     "handlebars-helpers": "^0.10.0",
+   // "nodemon": "^1.18.11",
     "path": "latest",
     "request": "latest"
   },
   "scripts": {
-    "start": "node app.js"
+      "start":"node app.js"
+  //  "start": "VSE_ENV=c1.adis.ws V1_VSE_ENV=3hpb2x6qxn4i1c8lmycbvy4fv.staging-content-uat.dev.adis.ws OLD_VSE_ENV=n5usznxubzr61e5yxdguiab9y.staging-content-uat.dev.adis.ws REPO_ID=5c5c64adc9e77c0001d73a22 CMS_PROD=apigee-test.adis.ws/v2/content CMS_UAT=apigee-test.adis.ws/v2/content USERNAME=cmsuat@amplience.com PASSWORD=z4XMx97K CLIENT=B8F76643-CF4B-4A86-B03F-2F026B88693B KEY=b9886db9-0ad9-4bd7-b978-a3248851d875 SECRET=81c88f2994ce8d39f20f0d626fcf0bd260f27a59fa9aecf4933701d0ea5d5582 ENDPOINT=cmslabs IMGSRC=i1.adis.ws nodemon app.js",
+  //  "prod": " VSE_ENV=c1.adis.ws V1_VSE_ENV=3hpb2x6qxn4i1c8lmycbvy4fv.staging-content-uat.dev.adis.ws OLD_VSE_ENV=n5usznxubzr61e5yxdguiab9y.staging-content-uat.dev.adis.ws REPO_ID=5c5c64adc9e77c0001d73a22 CMS_PROD=api.amplience.net/v2/content CMS_UAT=api.amplience.net/v2/content USERNAME=cmsuat@amplience.com PASSWORD=z4XMx97K CLIENT=e2eb4477-6147-4cf1-9969-47a372d3d49f KEY=b9886db9-0ad9-4bd7-b978-a3248851d875 SECRET=32f3815a51346a4adbe16d4ed84155256514af1068cdc000b9b7104860a5783c ENDPOINT=bccdemo IMGSRC=i1.adis.ws nodemon app.js"
   }
 }
