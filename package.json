@@ -5,7 +5,7 @@
   "dependencies": {
     "async": "^2.5.0",
     "aws-sdk": "latest",
-    "axios": "^0.18.0",
+    "axios": "^0.18.1",
     "body-parser": "latest",
     "cms-javascript-sdk": "git+https://github.com/amplience/cms-javascript-sdk.git#0.0.2",
     "express": "latest",
