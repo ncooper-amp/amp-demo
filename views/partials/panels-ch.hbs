@@ -1,9 +1,9 @@
-
+{{> header }}
 <div class="row">
     {{#each content.contentSlots}}
       <div class="col-sm">
       {{#if (eq [@type] 'http://c1-qa.adis.ws/c/cmslabs/image-block')}}
-      <img class="img-fluid" src="/retrieveImage/{{image.name}}" sizes="50vw" border=0 />
+      <img class="img-fluid" src="/retrieveImagePOI/{{image.name}}" sizes="(max-width: 576px) 100vw, 50vw" border=0 />
       {{/if}}
       {{#if (eq [@type] 'http://c1-qa.adis.ws/c/cmslabs/content-stack')}}
         {{> slides }}
@@ -12,3 +12,10 @@
     {{/each}}
   </div>
 </div>
+
+
+
+    {{> footer }}
+  </body>
+</html>
+
