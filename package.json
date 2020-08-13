@@ -13,7 +13,7 @@
     "express-validator": "^4.2.0",
     "formidable": "^1.2.1",
     "gl-matrix": "^3.0.0",
-    "handlebars": "^4.0.12",
+    "handlebars": "^4.3.0",
     "handlebars-helpers": "^0.10.0",
     "path": "latest",
     "request": "latest"
