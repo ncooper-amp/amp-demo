@@ -15,6 +15,7 @@ var helpers = require('handlebars-helpers')(['array', 'object', 'comparison','re
 var axios = require('axios')
 var formidable = require('formidable')
 var glmatrix = require('gl-matrix')
+const querystring = require('querystring');
 
 var app = express();
 app.use('/static', express.static(path.join(__dirname,'/static')));
@@ -110,9 +111,12 @@ const getAuthToken = function(){
   })
 };
 
-app.get('/retrieveImage/:name', function(req,res,next){
-  console.log(req.headers);
-  var image = "http://i1.adis.ws/i/bccdemo/" + req.params.name + "&w=" + req.headers.width;
+app.get('/retrieveImage/*', function(req,res,next){
+  console.log(req);
+  let queryString = querystring.unescape(querystring.stringify(req.query)).replace("$=","$");
+  // console.log(queryString)
+  var image = "http://i1.adis.ws/i/bccdemo/" + req.params[0] + "?" + queryString + "&w=" + req.headers.width;
+      // console.log(req.query)
       console.log(image); // captures correctly the image name
       req.pipe(request(image)).pipe(res)
 })

@@ -8,8 +8,27 @@
 
 {{#if (eq content.[@type] 'http://c1-qa.adis.ws/c/cmslabs/image-block')}}
   <div class="col-12">
-    <img class="img-fluid" src="/retrieveImage/{{content.image.name}}/" sizes="100vw, 50vw, 33vw, 25vw" border=0 />
+    <picture>
+      <source type="image/webp" srcset="/retrieveImage/{{content.image.name}}?$poi$&fmt=webp&qlt=100" sizes="(min-width: 1681px) 1680px, 100vw">
+      <img class="d-block img-fluid" src="/retrieveImage/{{content.image.name}}?$poi$&fmt=jpg&fmt.jpeg.interlaced=true&qlt=100" sizes="(min-width: 1681px) 1680px, 100vw" border=0 />
+    </picture>
+    
   </div>
+
+  <div class="col-12">
+    <picture>
+          <source
+        srcset="http://{{content.image.defaultHost}}/i/{{content.image.endpoint}}/{{content.image.name}}?$poi$&fmt=webp&amp;w=210&amp;qlt=100 210w,http://{{content.image.defaultHost}}/i/{{content.image.endpoint}}/{{content.image.name}}?$poi$&fmt=webp&amp;w=420&amp;qlt=100 420w,http://{{content.image.defaultHost}}/i/{{content.image.endpoint}}/{{content.image.name}}?$poi$&fmt=webp&amp;w=600&amp;qlt=100 600w,http://{{content.image.defaultHost}}/i/{{content.image.endpoint}}/{{content.image.name}}?$poi$&fmt=webp&amp;w=768&amp;qlt=100 768w,http://{{content.image.defaultHost}}/i/{{content.image.endpoint}}/{{content.image.name}}?$poi$&fmt=webp&amp;w=840&amp;qlt=100 840w,http://{{content.image.defaultHost}}/i/{{content.image.endpoint}}/{{content.image.name}}?$poi$&fmt=webp&amp;w=1000&amp;qlt=100 1000w,http://{{content.image.defaultHost}}/i/{{content.image.endpoint}}/{{content.image.name}}?$poi$&fmt=webp&amp;w=1200&amp;qlt=100 1200w,http://{{content.image.defaultHost}}/i/{{content.image.endpoint}}/{{content.image.name}}?$poi$&fmt=webp&amp;w=1536&amp;qlt=100 1536w,http://{{content.image.defaultHost}}/i/{{content.image.endpoint}}/{{content.image.name}}?$poi$&fmt=webp&amp;w=1800&amp;qlt=100 1800w,http://{{content.image.defaultHost}}/i/{{content.image.endpoint}}/{{content.image.name}}?$poi$&fmt=webp&amp;w=2000&amp;qlt=100 2000w,http://{{content.image.defaultHost}}/i/{{content.image.endpoint}}/{{content.image.name}}?$poi$&fmt=webp&amp;w=2400&amp;qlt=100 2400w"
+        sizes="(min-width: 1681px) 1680px, 100vw" type="image/webp"><img
+        alt="" class="d-block img-fluid"
+        sizes="(min-width: 1681px) 1680px, 100vw"
+        src="http://{{content.image.defaultHost}}/i/{{content.image.endpoint}}/{{content.image.name}}?$poi$&fmt=jpg&amp;fmt.jpeg.interlaced=true&amp;w=0&amp;h=300&amp;qlt=100"
+        srcset="http://{{content.image.defaultHost}}/i/{{content.image.endpoint}}/{{content.image.name}}?$poi$&fmt=jpg&amp;fmt.jpeg.interlaced=true&amp;w=210&amp;qlt=100 210w,http://{{content.image.defaultHost}}/i/{{content.image.endpoint}}/{{content.image.name}}?$poi$&fmt=jpg&amp;fmt.jpeg.interlaced=true&amp;w=420&amp;qlt=100 420w,http://{{content.image.defaultHost}}/i/{{content.image.endpoint}}/{{content.image.name}}?$poi$&fmt=jpg&amp;fmt.jpeg.interlaced=true&amp;w=600&amp;qlt=100 600w,http://{{content.image.defaultHost}}/i/{{content.image.endpoint}}/{{content.image.name}}?$poi$&fmt=jpg&amp;fmt.jpeg.interlaced=true&amp;w=768&amp;qlt=100 768w,http://{{content.image.defaultHost}}/i/{{content.image.endpoint}}/{{content.image.name}}?$poi$&fmt=jpg&amp;fmt.jpeg.interlaced=true&amp;w=840&amp;qlt=100 840w,http://{{content.image.defaultHost}}/i/{{content.image.endpoint}}/{{content.image.name}}?$poi$&fmt=jpg&amp;fmt.jpeg.interlaced=true&amp;w=1000&amp;qlt=100 1000w,http://{{content.image.defaultHost}}/i/{{content.image.endpoint}}/{{content.image.name}}?$poi$&fmt=jpg&amp;fmt.jpeg.interlaced=true&amp;w=1200&amp;qlt=100 1200w,http://{{content.image.defaultHost}}/i/{{content.image.endpoint}}/{{content.image.name}}?$poi$&fmt=jpg&amp;fmt.jpeg.interlaced=true&amp;w=1536&amp;qlt=100 1536w,http://{{content.image.defaultHost}}/i/{{content.image.endpoint}}/{{content.image.name}}?$poi$&fmt=jpg&amp;fmt.jpeg.interlaced=true&amp;w=1800&amp;qlt=100 1800w,http://{{content.image.defaultHost}}/i/{{content.image.endpoint}}/{{content.image.name}}?$poi$&fmt=jpg&amp;fmt.jpeg.interlaced=true&amp;w=2000&amp;qlt=100 2000w,http://{{content.image.defaultHost}}/i/{{content.image.endpoint}}/{{content.image.name}}?$poi$&fmt=jpg&amp;fmt.jpeg.interlaced=true&amp;w=2400&amp;qlt=100 2400w">
+
+         
+      </picture>
+  </div>
+
 {{/if}}
 
 {{#if (eq content.[@type] 'http://c1-qa.adis.ws/c/cmslabs/content-stack')}}
