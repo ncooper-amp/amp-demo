@@ -1,0 +1,57 @@
+
+{{> header }}
+{{#if (eq content.template 'Hero')}}
+  {{> hero }}
+{{/if}}
+
+{{viewport}}
+
+{{#if (eq content.[@type] 'http://c1-qa.adis.ws/c/cmslabs/image-block')}}
+<div class="col-12">
+  <img class="d-block img-fluid" src="https://cdn.media.amplience.net/i/{{content.image.endpoint}}/{{content.image.name}}?fmt=auto" sizes="(min-width: 1681px) 1680px, 100vw" border=0 />
+</div>
+<div class="col-12">
+  <img class="d-block img-fluid" src="https://cdn.media.amplience.net/i/{{content.image.endpoint}}/{{content.image.name}}?fmt=auto&qlt=default" sizes="(min-width: 1681px) 1680px, 100vw" border=0 />
+</div>
+
+<div class="col-12">
+  <img class="d-block img-fluid" src="https://cdn.media.amplience.net/i/{{content.image.endpoint}}/{{content.image.name}}?fmt=auto&qlt=default&fmt.jp2.qlt=70&fmt.webp.qlt=90" sizes="(min-width: 1681px) 1680px, 100vw" border=0 />
+</div>
+
+{{/if}}
+
+{{#if (eq content.[@type] 'http://c1-qa.adis.ws/c/cmslabs/content-stack')}}
+  {{> slides}}
+{{/if}}
+
+{{#if query.debug }}
+  {{#each content }}
+  <div class="col-lg-3 col-md-6 col-sm-12">
+    {{#each this}}
+      <div class="col-lg-3 col-md-6 col-sm-12">
+      {{#if (eq @key 'image')}}
+        <img src="http://{{this.defaultHost}}/i/{{this.endpoint}}/{{this.name}}?w=200" width=200 border=0 />
+        {{#each this.imgMetaData.metadata.detectedText.textLines}}
+          {{this}}
+        {{/each}}
+      {{else if (isArray this)}}
+        <div class="row">
+          {{> renderAny }}
+        </div>
+      {{else if (isObject this)}}
+        <div class="row">
+          {{this}}
+          {{> renderAny }}
+        </div>
+      {{else}}
+        <strong>@key: {{@key}}</strong> : value: {{this}}
+      {{/if}}
+    </div>
+    {{/each}}
+  </div>
+  {{/each}}
+{{/if}}
+
+    {{> footer }}
+  </body>
+</html>

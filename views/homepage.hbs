@@ -6,10 +6,28 @@
 
 {{viewport}}
 
+<div class="col-12"></div>
+      <img class="d-block img-fluid" src="https://cdn.media.amplience.net/i/bccdemo/{{content.image.name}}?$poi$&fmt=auto" sizes="(min-width: 1681px) 1680px, 100vw" border=0 />
+  </div>
+  <div class="col-12"></div>
+      <img class="d-block img-fluid" src="https://cdn.media.amplience.net/i/bccdemo/{{content.image.name}}?$poi$&fmt=auto&fmt.webp.qlt=50" sizes="(min-width: 1681px) 1680px, 100vw" border=0 />
+  </div>
+  <div class="col-12"></div>
+      <img class="d-block img-fluid" src="https://cdn.media.amplience.net/i/bccdemo/{{content.image.name}}?$poi$&fmt=auto&qlt=default" sizes="(min-width: 1681px) 1680px, 100vw" border=0 />
+  </div>
+  <div class="col-12"></div>
+      <img class="d-block img-fluid" src="https://cdn.media.amplience.net/i/bccdemo/{{content.image.name}}?$poi$&fmt=webp&qlt=default" sizes="(min-width: 1681px) 1680px, 100vw" border=0 />
+  </div>
+
+  <div class="col-12"></div>
+      <img class="d-block img-fluid" src="https://cdn.media.amplience.net/i/bccdemo/{{content.image.name}}?$poi$&fmt=jpg&qlt=default" sizes="(min-width: 1681px) 1680px, 100vw" border=0 />
+  </div>
+
+
 {{#if (eq content.[@type] 'http://c1-qa.adis.ws/c/cmslabs/image-block')}}
   <div class="col-12">
     <picture>
-      <source type="image/webp" srcset="/retrieveImage/{{content.image.name}}?$poi$&fmt=webp&qlt=100" sizes="(min-width: 1681px) 1680px, 100vw">
+      <source type="image/webp" srcset="/retrieveImage/{{content.image.name}}?$poi$&fmt=webp&qlt=50" sizes="(min-width: 1681px) 1680px, 100vw">
       <img class="d-block img-fluid" src="/retrieveImage/{{content.image.name}}?$poi$&fmt=jpg&fmt.jpeg.interlaced=true&qlt=100" sizes="(min-width: 1681px) 1680px, 100vw" border=0 />
     </picture>
     

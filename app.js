@@ -158,6 +158,26 @@ app.get('/',async function(req,res,next){
   })
 })
 
+app.get('/autoformat',async function(req,res,next){
+  vseEnvironment = req.query.vse || process.env.VSE_ENV
+  console.log("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
+  let content = await axios.get("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
+  await getImgData(content.data['@graph']);
+  var contentGraph = amp.inlineContent(content.data);
+  var stringContent = JSON.stringify(contentGraph,null,'\t');
+  console.log("viewport-width: " + req.headers['viewport-width'] + "\n")
+  // console.log(req);
+  res.render('autoformat',{
+    static_path:'/static',
+    theme:process.env.THEME || 'flatly',
+    pageTitle : "HomePage",
+    pageDescription : "Homepage",
+    query:req.query,
+    content:contentGraph[0],
+    viewport:req.headers['viewport-width']
+  })
+})
+
 app.get('/ListContentItems/:size/:page', function (req, res, next) {
 
       try{
