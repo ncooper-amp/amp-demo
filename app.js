@@ -111,6 +111,46 @@ const getAuthToken = function(){
   })
 };
 
+
+
+
+app.get('/ListContentItems/:size/:page', function (req, res, next) {
+
+  try{
+    getAuthToken().then(authToken =>{
+      axios({
+        method:"get",
+        url: "https://"+cmsEnvironment+"/content-repositories/"+respositoryId+"/content-items?page="+req.params.page+"&size="+req.params.size,
+        headers:{
+          "Authorization": "Bearer " + authToken
+        }
+      })
+        .then(response => {
+          var contentGraph = response.data;
+          stringContent = JSON.stringify(response.data,null,'\t');
+          console.log(stringContent);
+          res.render('list-content-items',{'pageTitle':'List Content Items - Success','contentGraph': contentGraph, 'stringContent' : stringContent, 'reqParams': req.query});
+        })
+        .catch(error => {
+          console.log(error);
+          res.render('list-content-items',{'pageTitle':'List Content Items - Fail','reqParams': req.query, 'error':error});
+        });
+    })
+    .catch(error => {
+      console.log(error)
+    })
+
+    }
+  catch (e) {
+    next(e)
+  }
+
+
+/* res.render('list-content-items',{title:"List Content Items",error:"figure out how to authorize so that i can list the content items and create links.."}) */
+
+})
+
+
 app.get('/retrieveImage/*', function(req,res,next){
   console.log(req);
   let queryString = querystring.unescape(querystring.stringify(req.query)).replace("$=","$");
@@ -129,7 +169,7 @@ app.get('/retrieveImagePOI/:name', function(req,res,next){
 })
 
 const getImgData = async function (graph) {
-    let promises = [];
+    // let promises = [];
     for (var i = 0; i < graph.length; i++) {
         if (graph[i].mediaType == 'image') {
             let metadata = await axios.get("http://"+imgSrc+"/i/" + graph[i].endpoint + "/" + graph[i].name + ".json?metadata=true");
@@ -144,7 +184,7 @@ app.get('/',async function(req,res,next){
   let content = await axios.get("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
   await getImgData(content.data['@graph']);
   var contentGraph = amp.inlineContent(content.data);
-  var stringContent = JSON.stringify(contentGraph,null,'\t');
+  // var stringContent = JSON.stringify(contentGraph,null,'\t');
   console.log("viewport-width: " + req.headers['viewport-width'] + "\n")
   // console.log(req);
   res.render('homepage',{
@@ -158,13 +198,13 @@ app.get('/',async function(req,res,next){
   })
 })
 
-app.get('/autoformat',async function(req,res,next){
+app.get('/autoformat',async function(req,res){
   vseEnvironment = req.query.vse || process.env.VSE_ENV
   console.log("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
   let content = await axios.get("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
   await getImgData(content.data['@graph']);
   var contentGraph = amp.inlineContent(content.data);
-  var stringContent = JSON.stringify(contentGraph,null,'\t');
+  // var stringContent = JSON.stringify(contentGraph,null,'\t');
   console.log("viewport-width: " + req.headers['viewport-width'] + "\n")
   // console.log(req);
   res.render('autoformat',{
@@ -178,41 +218,7 @@ app.get('/autoformat',async function(req,res,next){
   })
 })
 
-app.get('/ListContentItems/:size/:page', function (req, res, next) {
 
-      try{
-        getAuthToken().then(authToken =>{
-          axios({
-            method:"get",
-            url: "https://"+cmsEnvironment+"/content-repositories/"+respositoryId+"/content-items?page="+req.params.page+"&size="+req.params.size,
-            headers:{
-              "Authorization": "Bearer " + authToken
-            }
-          })
-            .then(response => {
-              var contentGraph = response.data;
-              stringContent = JSON.stringify(response.data,null,'\t');
-              console.log(stringContent);
-              res.render('list-content-items',{'pageTitle':'List Content Items - Success','contentGraph': contentGraph, 'stringContent' : stringContent, 'reqParams': req.query});
-            })
-            .catch(error => {
-              console.log(error);
-              res.render('list-content-items',{'pageTitle':'List Content Items - Fail','reqParams': req.query, 'error':error});
-            });
-        })
-        .catch(error => {
-          console.log(error)
-        })
-
-        }
-      catch (e) {
-        next(e)
-      }
-
-
-  /* res.render('list-content-items',{title:"List Content Items",error:"figure out how to authorize so that i can list the content items and create links.."}) */
-
-})
 
 app.get('/carousel',async function(req,res,next){
   vseEnvironment = req.query.vse || process.env.VSE_ENV
@@ -220,7 +226,7 @@ app.get('/carousel',async function(req,res,next){
   let content = await axios.get("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
   await getImgData(content.data['@graph']);
   var contentGraph = amp.inlineContent(content.data);
-  var stringContent = JSON.stringify(contentGraph,null,'\t');
+  // var stringContent = JSON.stringify(contentGraph,null,'\t');
   res.render('carousel',{
     static_path:'/static',
     theme:process.env.THEME || 'flatly',
@@ -239,7 +245,7 @@ app.get('/panels',async function(req,res,next){
   let content = await axios.get("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
   await getImgData(content.data['@graph']);
   var contentGraph = amp.inlineContent(content.data);
-  var stringContent = JSON.stringify(contentGraph,null,'\t');
+  // var stringContent = JSON.stringify(contentGraph,null,'\t');
   console.log(JSON.stringify(req.headers));
   res.render('panels',{
     static_path:'/static',
@@ -263,7 +269,7 @@ app.get('/panels-ch',async function(req,res,next){
   let content = await axios.get("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
   await getImgData(content.data['@graph']);
   var contentGraph = amp.inlineContent(content.data);
-  var stringContent = JSON.stringify(contentGraph,null,'\t');
+  // var stringContent = JSON.stringify(contentGraph,null,'\t');
   console.log(JSON.stringify(req.headers));
   res.render('panels-ch',{
     static_path:'/static',
@@ -348,8 +354,8 @@ app.post('/submit-form', (req,res,next) => {
       new formidable.IncomingForm().parse(req, function(err,fields, files){
         var oldpath = files.document.path;
         var newpath = path.join(__dirname,'/static/') + files.document.name;
-        fs.rename(oldpath, newpath, function (err) {
-          if (err) throw err;
+        fs.rename(oldpath, newpath, function (error) {
+          if (error) throw error;
           console.log('File uploaded and moved!');
           request({
             url: 'https://draping-convert.dev.adis.ws/svgToAMPD',
@@ -360,9 +366,9 @@ app.post('/submit-form', (req,res,next) => {
             },
             encoding: null,
             body: fs.createReadStream(newpath)
-           }, (error, response, body) => {
-                if (error) {
-                   res.send(error)
+           }, (renameError, response, body) => {
+                if (renameError) {
+                   res.send(renameError)
                 } else {
                   res.send(response.body)
                 }
@@ -453,7 +459,7 @@ const postSvgToAMPD = function(svgPath){
         reject(error)
     }
     else {
-       ampD = response.body.toString('utf8')
+       let ampD = response.body.toString('utf8')
        resolve(ampD);
     }
    })
@@ -461,14 +467,14 @@ const postSvgToAMPD = function(svgPath){
 }
 
 const createTextureArray = function(tetureObj){
-    texturePathArray = []
+    let texturePathArray = []
     tetureObj.forEach(function(texture){
       texturePathArray.push("https://"+imgSrc+"/i/"+texture.Texture.endpoint+"/"+texture.Texture.name)
     })
     return texturePathArray
 }
 const createTextureMatricesArray = function(tetureObj){
-    textureMatricesArray = []
+    let textureMatricesArray = []
     tetureObj.forEach(function(texture){
       const tmat = glmatrix.mat2d.fromTranslation(glmatrix.mat2d.create(), [0.5, 0.5]);
       glmatrix.mat2d.scale(tmat, tmat, [texture.scaleX, texture.scaleY]);
@@ -588,5 +594,5 @@ app.get('/draping', async function(req,res,next){
   }
 
 
-  var stringContent = JSON.stringify(contentGraph,null,'\t');
+  // var stringContent = JSON.stringify(contentGraph,null,'\t');
 })
