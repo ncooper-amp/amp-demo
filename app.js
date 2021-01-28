@@ -155,7 +155,7 @@ app.get('/retrieveImage/*', function(req,res,next){
   console.log(req);
   let queryString = querystring.unescape(querystring.stringify(req.query)).replace("$=","$");
   // console.log(queryString)
-  var image = "http://i1.adis.ws/i/bccdemo/" + req.params[0] + "?" + queryString + "&w=" + req.headers.width;
+  var image = "http://cdn.media.amplience.net/i/bccdemo/" + req.params[0] + "?" + queryString + "&w=" + req.headers.width;
       // console.log(req.query)
       console.log(image); // captures correctly the image name
       req.pipe(request(image)).pipe(res)
@@ -163,7 +163,7 @@ app.get('/retrieveImage/*', function(req,res,next){
 
 app.get('/retrieveImagePOI/:name', function(req,res,next){
   console.log(req.headers);
-  var image = "http://i1.adis.ws/i/bccdemo/" + req.params.name + "?$poi$&w="+  + req.headers.width +"&sm=aspect&aspect=1:1";
+  var image = "http://cdn.media.amplience.net/i/bccdemo/" + req.params.name + "?$poi$&w="+  + req.headers.width +"&sm=aspect&aspect=1:1";
       console.log(image); // captures correctly the image name
       req.pipe(request(image)).pipe(res)
 })
@@ -276,6 +276,30 @@ app.get('/panels-ch',async function(req,res,next){
     theme:process.env.THEME || 'flatly',
     pageTitle : "HomePage",
     pageDescription : "Homepage",
+    query:req.query,
+    content:contentGraph[0],
+    productName: "This is a Dumb Product",
+    dpr:req.headers.dpr,
+    "viewport-width":req.headers["viewport-width"],
+    rtt:req.headers.rtt,
+    downlink:req.headers.downlink,
+    ect:req.headers.ect
+  })
+})
+
+app.get('/panels-ir',async function(req,res,next){
+  vseEnvironment = req.query.vse || process.env.VSE_ENV
+  // console.error("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
+  let content = await axios.get("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
+  await getImgData(content.data['@graph']);
+  var contentGraph = amp.inlineContent(content.data);
+  // var stringContent = JSON.stringify(contentGraph,null,'\t');
+  console.log(JSON.stringify(req.headers));
+  res.render('panels-ir',{
+    static_path:'/static',
+    theme:process.env.THEME || 'flatly',
+    pageTitle : "Image Recognition Demo",
+    pageDescription : "Image Recognition Demo",
     query:req.query,
     content:contentGraph[0],
     productName: "This is a Dumb Product",
