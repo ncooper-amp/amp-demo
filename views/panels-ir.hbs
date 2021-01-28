@@ -6,15 +6,15 @@
       <picture>
           <!--[if IE 9]><video style="display: none;"><![endif]-->
           <source srcset="
-                          //{{image.defaultHost}}/i/{{image.endpoint}}/{{image.name}}?$facePoi$&w=1024&sm=aspect&aspect=16:9 1024w, 
-                          //{{image.defaultHost}}/i/{{image.endpoint}}/{{image.name}}?$facePoi$&w=760&sm=aspect&aspect=1:1 760w, 
-                          //{{image.defaultHost}}/i/{{image.endpoint}}/{{image.name}}?$facePoi$&w=288&sm=aspect&aspect=1:1 577w, 
-                          //{{image.defaultHost}}/i/{{image.endpoint}}/{{image.name}}?$facePoi$&w=320&sm=aspect&aspect=9:16 320w" media="(min-width: 320px)" sizes="(min-width:1024px) 1024px,100vw,(min-width:760px) 760px, 100vw,(min-width:577px) 577px, 50vw,(min-width:320px) 320px, 100vw">
-          <!-- <source srcset="//{{image.defaultHost}}/i/{{image.endpoint}}/{{image.name}}?$poi$&w=380&sm=aspect&aspect=1:1" media="(min-width: 760px)">
-          <source srcset="//{{image.defaultHost}}/i/{{image.endpoint}}/{{image.name}}?$poi$&w=288&sm=aspect&aspect=1:1" media="(min-width: 577px)">
-          <source srcset="//{{image.defaultHost}}/i/{{image.endpoint}}/{{image.name}}?$poi$&w=320&sm=aspect&aspect=9:16" media="(min-width: 320px)"> -->
+                          //cdn.media.amplience.net/i/{{image.endpoint}}/{{image.name}}?$facePoi$&w=1024&sm=aspect&aspect=16:9 1024w, 
+                          //cdn.media.amplience.net/i/{{image.endpoint}}/{{image.name}}?$facePoi$&w=760&sm=aspect&aspect=1:1 760w, 
+                          //cdn.media.amplience.net/i/{{image.endpoint}}/{{image.name}}?$facePoi$&w=288&sm=aspect&aspect=1:1 577w, 
+                          //cdn.media.amplience.net/i/{{image.endpoint}}/{{image.name}}?$facePoi$&w=320&sm=aspect&aspect=9:16 320w" media="(min-width: 320px)" sizes="(min-width:1024px) 1024px,100vw,(min-width:760px) 760px, 100vw,(min-width:577px) 577px, 50vw,(min-width:320px) 320px, 100vw">
+          <!-- <source srcset="//cdn.media.amplience.net/i/{{image.endpoint}}/{{image.name}}?$poi$&w=380&sm=aspect&aspect=1:1" media="(min-width: 760px)">
+          <source srcset="//cdn.media.amplience.net/i/{{image.endpoint}}/{{image.name}}?$poi$&w=288&sm=aspect&aspect=1:1" media="(min-width: 577px)">
+          <source srcset="//cdn.media.amplience.net/i/{{image.endpoint}}/{{image.name}}?$poi$&w=320&sm=aspect&aspect=9:16" media="(min-width: 320px)"> -->
           <!--[if IE 9]></video><![endif]-->
-          <img class="d-block img-fluid" src="//{{image.defaultHost}}/i/{{image.endpoint}}/{{image.name}}?$facePoi$&w=1024&sm=aspect&aspect=1:1" width="100%" border=0 alt="{{#each image.imgMetaData.metadata.detectedText.textLines}}{{this}} {{/each}}" title="{{#each image.imgMetaData.metadata.detectedText.textLines}}{{this}} {{/each}}"/>
+          <img class="d-block img-fluid" src="//cdn.media.amplience.net/i/{{image.endpoint}}/{{image.name}}?$facePoi$&w=1024&sm=aspect&aspect=1:1" width="100%" border=0 alt="{{#each image.imgMetaData.metadata.detectedText.textLines}}{{this}} {{/each}}" title="{{#each image.imgMetaData.metadata.detectedText.textLines}}{{this}} {{/each}}"/>
       </picture>
       {{/if}}
       {{#if (eq [@type] 'http://c1-qa.adis.ws/c/cmslabs/content-stack')}}

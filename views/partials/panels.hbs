@@ -7,12 +7,12 @@
 
       <picture>
           <!--[if IE 9]><video style="display: none;"><![endif]-->
-          <source srcset="http://{{image.defaultHost}}/i/{{image.endpoint}}/{{image.name}}?$poi$&w=512&sm=aspect&aspect=1:1" media="(min-width: 1024px)">
-          <source srcset="http://{{image.defaultHost}}/i/{{image.endpoint}}/{{image.name}}?$poi$&w=380&sm=aspect&aspect=1:1" media="(min-width: 760px)">
-          <source srcset="http://{{image.defaultHost}}/i/{{image.endpoint}}/{{image.name}}?$poi$&w=288&sm=aspect&aspect=1:1" media="(min-width: 577px)">
-          <source srcset="http://{{image.defaultHost}}/i/{{image.endpoint}}/{{image.name}}?$poi$&w=320&sm=aspect&aspect=1:1" media="(min-width: 320px)">
+          <source srcset="http://cdn.media.amplience.net/i/{{image.endpoint}}/{{image.name}}?$poi$&w=512&sm=aspect&aspect=1:1" media="(min-width: 1024px)">
+          <source srcset="http://cdn.media.amplience.net/i/{{image.endpoint}}/{{image.name}}?$poi$&w=380&sm=aspect&aspect=1:1" media="(min-width: 760px)">
+          <source srcset="http://cdn.media.amplience.net/i/{{image.endpoint}}/{{image.name}}?$poi$&w=288&sm=aspect&aspect=1:1" media="(min-width: 577px)">
+          <source srcset="http://cdn.media.amplience.net/i/{{image.endpoint}}/{{image.name}}?$poi$&w=320&sm=aspect&aspect=1:1" media="(min-width: 320px)">
           <!--[if IE 9]></video><![endif]-->
-          <img class="d-block img-fluid" src="http://{{image.defaultHost}}/i/{{image.endpoint}}/{{image.name}}?$poi$&w=1024&sm=aspect&aspect=1:3" width="100%" border=0 alt="{{#each image.imgMetaData.metadata.detectedText.textLines}}{{this}} {{/each}}" title="{{#each image.imgMetaData.metadata.detectedText.textLines}}{{this}} {{/each}}"/>
+          <img class="d-block img-fluid" src="http://cdn.media.amplience.net/i/{{image.endpoint}}/{{image.name}}?$poi$&w=1024&sm=aspect&aspect=1:3" width="100%" border=0 alt="{{#each image.imgMetaData.metadata.detectedText.textLines}}{{this}} {{/each}}" title="{{#each image.imgMetaData.metadata.detectedText.textLines}}{{this}} {{/each}}"/>
       </picture>
       {{/if}}
       {{#if (eq [@type] 'http://c1-qa.adis.ws/c/cmslabs/content-stack')}}
