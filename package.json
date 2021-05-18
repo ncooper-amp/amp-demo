@@ -7,9 +7,10 @@
   },
   "private": true,
   "dependencies": {
+    "amqplib": "^0.7.1",
     "async": "^2.5.0",
     "aws-sdk": "latest",
-    "axios": "^0.18.1",
+    "axios": "^0.21.1",
     "body-parser": "latest",
     "cms-javascript-sdk": "git+https://github.com/amplience/cms-javascript-sdk.git#0.0.2",
     "express": "latest",
@@ -21,6 +22,7 @@
     "handlebars": "^4.7.6",
     "handlebars-helpers": "^0.10.0",
     "path": "latest",
+    "rascal": "^13.0.2",
     "request": "latest"
   },
   "scripts": {

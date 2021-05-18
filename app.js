@@ -116,8 +116,35 @@ const getAuthToken = function(){
 };
 
 
+const amqplib = require('amqplib');
+
+var q = 'tasks';
+
+var url = process.env.CLOUDAMQP_URL;
+var open = require('amqplib').connect(url);
+
+// Consumer
+open.then(function(conn) {
+  var ok = conn.createChannel();
+  ok = ok.then(function(ch) {
+    ch.assertQueue(q);
+    ch.consume(q, function(msg) {
+      if (msg !== null) {
+        console.log(msg.content.toString());
+        ch.ack(msg);
+      }
+    });
+  });
+  return ok;
+}).then(null, console.warn);
+
+// Publisher
+
+
+
+
 app.get('/webhookListener', function(req, res) {
-  console.log(req);
+  // console.log(req);
   res.send('<pre>' + JSON.stringify(received_updates, null, 2) + '</pre>');
 });
 
@@ -143,7 +170,14 @@ app.post('/facebook', function(req, res) {
 
   console.log('request header X-Hub-Signature validated');
   // Process the Facebook updates here
-  received_updates.unshift(req.body);
+  open.then(function(conn) {
+    var ok = conn.createChannel();
+    ok = ok.then(function(ch) {
+      ch.assertQueue(q);
+      ch.sendToQueue(q, new Buffer(req.body));
+    });
+    return ok;
+  }).then(null, console.warn);
   res.sendStatus(200);
 });
 
@@ -151,7 +185,14 @@ app.post('/instagram', function(req, res) {
   console.log('Instagram request body:');
   console.log(req.body);
   // Process the Instagram updates here
-  received_updates.unshift(req.body);
+  open.then(function(conn) {
+    var ok = conn.createChannel();
+    ok = ok.then(function(ch) {
+      ch.assertQueue(q);
+      ch.sendToQueue(q, new Buffer(req.body.field + ',' + (req.body.value.media_id||0) + ',' + (req.body.value.comment_id||0)));
+    });
+    return ok;
+  }).then(null, console.warn);
   res.sendStatus(200);
 });
 
@@ -261,6 +302,33 @@ app.get('/autoformat',async function(req,res){
   })
 })
 
+app.get('/afTester/*', function(req,res,next){
+  console.log(req);
+  let queryString = querystring.unescape(querystring.stringify(req.query)).replace("$=","$");
+  // console.log(queryString)
+  var image = "http://cdn.media.amplience.net/i/bccdemo/" + req.params[0] + "?" + queryString + "&w=" + req.headers.width;
+      // console.log(req.query)
+      console.log(image); // captures correctly the image name
+      req.pipe(request(image)).pipe(res)
+})
+
+app.get('/af-tester/:endpoint/*',async function(req,res){
+  let queryString = querystring.unescape(querystring.stringify(req.query)).replace("$=","$");
+  console.log(req.params[0])
+  console.log(req.params.endpoint)
+  console.log(queryString);
+
+  res.render('af-tester',{
+    static_path:'/static',
+    theme:process.env.THEME || 'flatly',
+    pageTitle : "HomePage",
+    pageDescription : "Homepage",
+    query:req.query,
+    endpoint:req.params.endpoint,
+    origImage:req.params[0] + '?' + queryString
+    
+  }) 
+})
 
 
 app.get('/carousel',async function(req,res,next){
