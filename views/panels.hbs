@@ -17,6 +17,13 @@
           <img class="d-block img-fluid" src="//cdn.media.amplience.net/i/{{image.endpoint}}/{{image.name}}?$poi$&w=1024&sm=aspect&aspect=1:1" width="100%" border=0 alt="{{#each image.imgMetaData.metadata.detectedText.textLines}}{{this}} {{/each}}" title="{{#each image.imgMetaData.metadata.detectedText.textLines}}{{this}} {{/each}}"/>
       </picture>
       {{/if}}
+      {{#if (eq [@type] 'https://example.com/svgbanner')}}
+          <div class="sitewide-114zbeb">
+            <img class="d-block img-fluid" src="//{{propertyName1.defaultHost}}/i/{{propertyName1.endpoint}}/{{propertyName1.name}}?$poi$&w=1024&sm=aspect&aspect=1:1" width="100%" border=0 />
+            <img alt="Ready. Set. Summer!" class="sitewide-arclpb" src="//{{propertyName2.defaultHost}}/v1/static/{{propertyName2.name}}">
+          </div>
+          
+      {{/if}}
       {{#if (eq [@type] 'http://c1-qa.adis.ws/c/cmslabs/content-stack')}}
         {{> slides }}
       {{/if}}

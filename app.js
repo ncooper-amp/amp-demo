@@ -17,18 +17,23 @@ var formidable = require('formidable')
 var glmatrix = require('gl-matrix')
 const querystring = require('querystring');
 var xhub = require('express-x-hub');
+var jp = require('jsonpath');
+const { promises } = require('dns');
+const { json } = require('body-parser');
+require('dotenv').config()
 
 var app = express();
 app.use('/static', express.static(path.join(__dirname,'/static')));
 app.use('/scripts', express.static(__dirname + '/node_modules/'));
 
 app.set('view engine', 'hbs')
-app.engine('hbs', expressHbs( {
+app.engine('hbs', expressHbs.engine( {
   extname: 'hbs',
   layoutsDir: __dirname + '/views/',
   partialsDir: __dirname + '/views/partials/',
   helpers
 } ) );
+
 app.use(xhub({ algorithm: 'sha1', secret: process.env.APP_SECRET }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended:false}));
@@ -94,17 +99,45 @@ var imgSrc = process.env.IMGSRC
 var token = process.env.TOKEN || 'token';
 var received_updates = [];
 
-const getAuthToken = function(){
+const getAuthToken = async function(whichEnv){
   return new Promise(function(resolve, reject){
-    axios({
-      method:"post",
-      url:"https://auth.adis.ws/oauth/token",
-      params:{
-        client_id:clientId,
-        client_secret:apiSecret,
-        grant_type:"client_credentials",
+    if (whichEnv == 'qa'){
+      var authCall = {
+        method:"post",
+        url:"https://auth.amplience-qa.net/oauth/token",
+        params:{
+          client_id:process.env.QA_CLIENT,
+          username:process.env.QA_USERNAME,
+          password:process.env.QA_PASSWORD,
+          grant_type:"password",
+        }
       }
-    })
+    }
+    else if (whichEnv == 'password' ) {
+      var authCall = {
+        method:"post",
+        url:"https://auth.amplience.net/oauth/token",
+        params:{
+          client_id:process.env.PROD_PASSWORD_CLIENT,
+          username:process.env.PROD_PASSWORD_USERNAME,
+          password:process.env.PROD_PASSWORD_PASSWORD,
+          grant_type:"password",
+        }
+      }
+    }  
+    else {
+      var authCall = {
+        method:"post",
+        url:"https://auth.amplience.net/oauth/token",
+        params:{
+          client_id:clientId,
+          client_secret:apiSecret,
+          grant_type:"client_credentials",
+        }
+      }
+    }  
+    //onsole.log(authCall);
+    axios(authCall)
     .then(response => {
       resolve(response.data.access_token);
       })
@@ -116,6 +149,38 @@ const getAuthToken = function(){
 };
 
 
+const getHubs = async(whichEnv,authToken,s=100,n=0) => {
+  var allHubData = []
+  var totalElements = 0;
+  var keepgoing = true;
+  while (keepgoing){
+   console.log("https://api.amplience.net/v2/content/hubs?size=" + s + "&page=" + n)
+   let response = await axios({
+      method: "get",
+      url: "https://api.amplience.net/v2/content/hubs?size=" + s + "&page=" + n,
+      headers: {
+        "Authorization": "Bearer " + authToken
+      }
+    })
+    await allHubData.push.apply(allHubData,response.data['_embedded'].hubs);
+    totalElements += response.data.page.size;
+    n++;
+    if (totalElements >= response.data.page.totalElements){
+      keepgoing = false;
+      let filteredHubData = []
+      for (const hub of allHubData){
+        filteredHubData.push([hub.id,hub.label,hub.settings.publishing.platforms.amplience_dam.endpoint])
+      }
+      if (filteredHubData.length == allHubData.length){
+        return filteredHubData
+      }
+    }
+
+  }
+  
+}
+
+/*
 const amqplib = require('amqplib');
 
 var q = 'tasks';
@@ -195,8 +260,130 @@ app.post('/instagram', function(req, res) {
   }).then(null, console.warn);
   res.sendStatus(200);
 });
-
-
+*/
+app.get('/permsReport',function(req,res,next){
+  try{
+    getAuthToken("qa")
+      .then(authToken =>{
+        axios({
+          method:"get",
+          url:"https://auth.amplience-qa.net/groups",
+          headers:{
+            "Authorization": "Bearer " + authToken
+          }
+        })
+        .then(response => {
+          stringContent = JSON.stringify(response.data,null,'\t');
+          var userDetails = jp.query(response.data,'$.included..attributes')
+          var userIds = jp.query(response.data,'$.included..id')
+          var groupIds = jp.query(response.data,'$.data.*.id')
+          var groupLabels = jp.query(response.data,'$.data..attributes.label')
+          var groupMembers = jp.query(response.data,'$..data..relationships.member.data')
+          var userInfo = []
+          for (x in userIds){
+            var entry = {}
+            entry[userIds[x]] = userDetails[x]
+            userInfo.push(entry)
+          }
+          var groupInfo = [];
+          for (y in groupIds){ 
+            var groupEntry = {}
+            groupEntry[groupIds[y]] = {};
+            groupEntry[groupIds[y]].label = groupLabels[y]
+            //console.log('$.data[?(@.id==\''+groupIds[y]+'\')].relationships.member.data.*.id');
+            memberIdsArray = jp.query(response.data,'$.data[?(@.id==\''+groupIds[y]+'\')].relationships.member.data.*.id')
+            //memberIdsString = memberIdsArray.toString();
+            groupEntry[groupIds[y]].memberIds = memberIdsArray
+            groupInfo.push(groupEntry)
+          }
+          
+          for (z in userInfo){
+            var usersGroups = [];
+            for (a in groupInfo){
+              var currUserId = Object.keys(userInfo[z]);
+              currUserId = currUserId.toString();
+              var currGroupId = Object.keys(groupInfo[a])
+              var currGroupName = Object.keys(groupInfo[a])
+              currGroupId = currGroupId.toString();
+              var currgroupMembers = groupInfo[a][currGroupId].memberIds
+              if (currgroupMembers.includes(currUserId)){
+                usersGroups.push(groupInfo[a][currGroupName].label);
+              }
+            }
+            userInfo[z][currUserId].groups = usersGroups;
+          }
+          console.log(userInfo);
+          axios({
+            method:"get",
+            url:"https://api.amplience-qa.net/v2/content/hubs",
+            headers:{
+              "Authorization": "Bearer " + authToken
+            }
+          })
+          .then(hubsresponse => {
+            // console.log(hubsresponse);
+            var hubIds = jp.query(hubsresponse.data,'$..*.*.id')
+            var hublabels = jp.query(hubsresponse.data,'$..*.*.label')
+            var hubdescriptions = jp.query(hubsresponse.data,'$..*.*.description')
+            var hubInfo = {};
+            var promises = [];
+            var memberObj = {};
+            console.log(hubIds)
+            for (h in hubIds){
+              promises.push(axios({
+                method:"get",
+                url:"https://api.amplience-qa.net/v2/content/admin/access/hubs/"+ hubIds[h] +"/members",
+                headers:{
+                  "Authorization": "Bearer " + authToken
+                }
+              })
+                .then(members => {
+                  var hubMemberIds = jp.query(members.data['_embedded'].members,'$..sid')
+                  var hubMemberperms = jp.query(members.data['_embedded'].members,'$..permissions')
+                  memberObj[hubIds[h]] = {
+                    "id":hubMemberIds,
+                    "permissions":hubMemberperms
+                  }
+                })
+                .catch(error => {
+                  console.error(error);
+                  res.sendStatus(500);
+                }))
+            }
+            //console.log(gethubMembers);
+              Promise.all(promises)
+              .then(promiseResponse => {
+                //console.log("get members response")
+                console.log(memberObj)
+                
+              })
+              .catch(error => {
+                console.error(error);
+                res.sendStatus(500);
+              });
+            
+            //console.log(hubInfo)
+            res.send(200);
+          })
+          .catch(error => {
+            console.error(error);
+            res.sendStatus(500);
+          });
+          
+        })
+        .catch(error => {
+          console.error(error);
+          res.sendStatus(500);
+        });
+      })
+      .catch(error => {
+        console.log(error)
+      })
+  }
+  catch (e) {
+    next(e)
+  }
+});
 
 app.get('/ListContentItems/:size/:page', function (req, res, next) {
 
@@ -239,7 +426,21 @@ app.get('/retrieveImage/*', function(req,res,next){
   console.log(req);
   let queryString = querystring.unescape(querystring.stringify(req.query)).replace("$=","$");
   // console.log(queryString)
-  var image = "http://cdn.media.amplience.net/i/bccdemo/" + req.params[0] + "?" + queryString + "&w=" + req.headers.width;
+  var image = "http://cdn.media.amplience.net/i/"+ endPoint +"/" + req.params[0] + "?" + queryString + "&w=" + req.headers.width;
+      // console.log(req.query)
+      console.log(image); // captures correctly the image name
+      req.pipe(request(image)).pipe(res)
+})
+
+app.get('/padDetecedObject/*', async function(req,res,next){
+  // console.log(req);
+  let metadata = await axios.get("http://cdn.media.amplience.net/i/"+ endPoint +"/" + req.params[0] + ".json?metadata=true");
+  console.log(JSON.stringify(metadata.data.metadata));
+  var boundingboxes = jp.query(metadata.data.metadata,'$.detectedObjects.data[?(@.instances != null)]..boundingBox');
+  console.log(JSON.stringify(boundingboxes));
+  let queryString = querystring.unescape(querystring.stringify(req.query)).replace("$=","$");
+  // console.log(queryString)
+  var image = "http://cdn.media.amplience.net/i/"+ endPoint +"/" + req.params[0] + "?" + queryString + "&w=" + req.headers.width;
       // console.log(req.query)
       console.log(image); // captures correctly the image name
       req.pipe(request(image)).pipe(res)
@@ -247,7 +448,7 @@ app.get('/retrieveImage/*', function(req,res,next){
 
 app.get('/retrieveImagePOI/:name', function(req,res,next){
   console.log(req.headers);
-  var image = "http://cdn.media.amplience.net/i/bccdemo/" + req.params.name + "?$poi$&w="+  + req.headers.width +"&sm=aspect&aspect=1:1";
+  var image = "http://cdn.media.amplience.net/i/"+ endPoint +"/" + req.params.name + "?$poi$&w="+  + req.headers.width +"&sm=aspect&aspect=1:1";
       console.log(image); // captures correctly the image name
       req.pipe(request(image)).pipe(res)
 })
@@ -266,16 +467,40 @@ app.get('/',async function(req,res,next){
   vseEnvironment = req.query.vse || process.env.VSE_ENV
   console.log("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
   let content = await axios.get("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
-  await getImgData(content.data['@graph']);
+  //await getImgData(content.data['@graph']);
   var contentGraph = amp.inlineContent(content.data);
-  // var stringContent = JSON.stringify(contentGraph,null,'\t');
-  console.log("viewport-width: " + req.headers['viewport-width'] + "\n")
+  //console.log(contentGraph[0]['@type'])
+  var stringContent = JSON.stringify(contentGraph,null,'\t');
+  console.log(stringContent);
+  // console.log("viewport-width: " + req.headers['viewport-width'] + "\n")
   // console.log(req);
   res.render('homepage',{
     static_path:'/static',
     theme:process.env.THEME || 'flatly',
     pageTitle : "HomePage",
     pageDescription : "Homepage",
+    query:req.query,
+    content:contentGraph[0],
+    viewport:req.headers['viewport-width']
+  })
+})
+
+app.get('/svgcard',async function(req,res,next){
+  vseEnvironment = req.query.vse || process.env.VSE_ENV
+  console.log("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
+  let content = await axios.get("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
+  //await getImgData(content.data['@graph']);
+  var contentGraph = amp.inlineContent(content.data);
+  //console.log(contentGraph[0]['@type'])
+  var stringContent = JSON.stringify(contentGraph,null,'\t');
+  console.log(stringContent);
+  // console.log("viewport-width: " + req.headers['viewport-width'] + "\n")
+  // console.log(req);
+  res.render('cards',{
+    static_path:'/static',
+    theme:process.env.THEME || 'flatly',
+    pageTitle : "cardview",
+    pageDescription : "cardview",
     query:req.query,
     content:contentGraph[0],
     viewport:req.headers['viewport-width']
@@ -330,6 +555,75 @@ app.get('/af-tester/:endpoint/*',async function(req,res){
   }) 
 })
 
+app.get('/reposInfo',async function(req,res,next){
+  const authToken = await getAuthToken("password");
+  //console.log(authToken);
+  const Hubs = await getHubs("password",authToken)
+  //res.send(Hubs);
+  try{
+    getAuthToken("password")
+      .then(authToken =>{
+        
+        var repoDataArray = []
+        for(const hub of Hubs){
+          //res.send(hub);
+          axios({
+            method:"get",
+            url:"https://api.amplience.net/v2/content/hubs/"+hub[0]+"/content-repositories?n=100",
+            headers:{
+              "Authorization": "Bearer " + authToken
+            }
+          })
+          .then(response => {
+            
+            var repoIds = jp.query(response.data,'$._embedded["content-repositories"]..id')
+            var repoCount = jp.query(response.data,'$.page.totalElements')
+            var repoDataObj = {
+              "hub":hub[0],
+              "label":hub[1],
+              "endpoint":hub[2],
+              "data":{
+                "repoIds":repoIds,
+                "repoCount":repoCount
+              }
+            }
+            //console.log(repoDataObj)
+            repoDataArray.push(repoDataObj);
+            //console.log(repoDataArray.length);
+
+            if (repoDataArray.length == Hubs.length){
+              res.send(repoDataArray);      
+            }
+            
+          })
+          .catch(error => {
+            console.error("errno: " + error.errno);
+            console.error("code: " + error.code);
+            console.error("url: " + error.config.url);
+            console.error("\n\n-----\n\n");
+            var dummyrepoDataObj = {
+              "hub":hub[0],
+              "label":hub[1],
+              "endpoint":hub[2],
+              "data":{
+                "repoIds":['123456'],
+                "repoCount":123456
+              }
+            }
+            repoDataArray.push(dummyrepoDataObj)
+            //next(error)
+          });
+          
+
+        }
+        
+    })      
+  }
+  catch (e) {
+    next(e)
+  }
+})
+
 
 app.get('/carousel',async function(req,res,next){
   vseEnvironment = req.query.vse || process.env.VSE_ENV
@@ -354,10 +648,10 @@ app.get('/panels',async function(req,res,next){
   vseEnvironment = req.query.vse || process.env.VSE_ENV
   // console.error("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
   let content = await axios.get("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
-  await getImgData(content.data['@graph']);
+  //await getImgData(content.data['@graph']);
   var contentGraph = amp.inlineContent(content.data);
   // var stringContent = JSON.stringify(contentGraph,null,'\t');
-  console.log(JSON.stringify(req.headers));
+  // console.log(JSON.stringify(req.headers));
   res.render('panels',{
     static_path:'/static',
     theme:process.env.THEME || 'flatly',
@@ -427,7 +721,7 @@ app.get('/showJSON', async function(req,res,next){
   vseEnvironment = req.query.vse || process.env.VSE_ENV
   console.log("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
   let content = await axios.get("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
-  await getImgData(content.data['@graph']);
+  //await getImgData(content.data['@graph']);
   var contentGraph = amp.inlineContent(content.data);
   var stringContent = JSON.stringify(contentGraph,null,'\t');
   res.render('showJSON',{
