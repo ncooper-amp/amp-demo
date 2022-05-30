@@ -4,8 +4,8 @@
 
 {{#if (eq content.[@type] 'https://example.com/svgbanner')}}
     <div class="sitewide-114zbeb">
-      <img class="d-block img-fluid" src="https://1ec72s7x3x5p1t9w1a4gdz9f6.staging-content-mandelbrot-qa.dev.adis.ws/i/{{content.propertyName1.endpoint}}/{{content.propertyName1.name}}" width="100%" border=0 />
-      <img alt="Ready. Set. Summer!" class="sitewide-arclpb" src="https://1ec72s7x3x5p1t9w1a4gdz9f6.staging-content-mandelbrot-qa.dev.adis.ws/v1/static/{{content.propertyName2.name}}" width="100%" style="position:absolute; top:0px;">
+      <img class="d-block img-fluid" src="https://{{content.propertyName1.defaultHost}}/i/{{content.propertyName1.endpoint}}/{{content.propertyName1.name}}" width="100%" border=0 />
+      <img alt="Ready. Set. Summer!" class="sitewide-arclpb" src="https://{{content.propertyName2.defaultHost}}/v1/static/{{content.propertyName2.name}}" width="100%" style="position:absolute; top:0px;">
     </div>
     
 {{/if}}
