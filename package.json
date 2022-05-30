@@ -2,17 +2,17 @@
   "name": "Amplience-Demo-Site",
   "version": "0.0.1",
   "engines": {
-    "node": "10.15.3",
-    "npm": "6.9.0"
+    "node": "v17.2.0",
+    "npm": "8.1.4"
   },
   "private": true,
   "dependencies": {
-    "amqplib": "^0.7.1",
     "async": "^2.5.0",
     "aws-sdk": "latest",
-    "axios": "^0.21.1",
+    "axios": "latest",
     "body-parser": "latest",
     "cms-javascript-sdk": "git+https://github.com/amplience/cms-javascript-sdk.git#0.0.2",
+    "dotenv": "^10.0.0",
     "express": "latest",
     "express-handlebars": "latest",
     "express-validator": "^4.2.0",
@@ -21,6 +21,7 @@
     "gl-matrix": "^3.0.0",
     "handlebars": "^4.7.6",
     "handlebars-helpers": "^0.10.0",
+    "jsonpath": "^1.1.1",
     "path": "latest",
     "rascal": "^13.0.2",
     "request": "latest"
