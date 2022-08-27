@@ -180,6 +180,85 @@ const getHubs = async(whichEnv,authToken,s=100,n=0) => {
   
 }
 
+const getRepos = async(whichEnv,hubId,authToken,s=100,n=0) => {
+  var allRepoData = []
+  var totalElements = 0;
+  var keepgoing = true;
+  while (keepgoing){
+   console.log("https://api.amplience.net/v2/content/hubs/"+hubId+"/content-repositories?size=" + s + "&page=" + n)
+   let response = await axios({
+      method: "get",
+      url: "https://api.amplience.net/v2/content/hubs/"+hubId+"/content-repositories?size=" + s + "&page=" + n,
+      headers: {
+        "Authorization": "Bearer " + authToken
+      }
+    })
+    await allRepoData.push.apply(allRepoData,response.data['_embedded']['content-repositories']);
+    totalElements += response.data.page.size;
+    n++;
+    if (totalElements >= response.data.page.totalElements){
+      keepgoing = false;
+      let filteredRepoData = []
+      for (const repo of allRepoData){
+        filteredRepoData.push([repo.id,repo.label,repo.name])
+      }
+      if (filteredRepoData.length == allRepoData.length){
+        return filteredRepoData
+      }
+    }
+
+  }
+  
+}
+
+const getContentItems = async(whichEnv,repos,authToken) => {
+  var allContentItemData = []
+  var totalElements = 0;
+  var currentLoopIndex = 0;
+  console.log(repos.length)
+  for (const [index,repo] of repos.entries()){
+    console.log("repo:"+ repo);
+    console.log(index);
+    currentLoopIndex++;
+    var s=100;
+    var n=0;
+    var keepgoing = true;
+    while (keepgoing){
+     console.log("https://api.amplience.net/v2/content/content-repositories/"+repo[0]+"/content-items?size=" + s + "&page=" + n)
+     let response = await axios({
+        method: "get",
+        url: "https://api.amplience.net/v2/content/content-repositories/"+repo[0]+"/content-items?size=" + s + "&page=" + n,
+        headers: {
+          "Authorization": "Bearer " + authToken
+        }
+      })
+      // console.log(response.data['_embedded']['content-items']);
+      await allContentItemData.push.apply(allContentItemData,response.data['_embedded']['content-items']);
+      totalElements += response.data.page.size;
+      n++;
+      if (totalElements >= response.data.page.totalElements){
+        keepgoing = false;
+        
+      }
+  
+    }
+  }
+  if (currentLoopIndex == repos.length){
+    let filteredContentItemData = []
+    for (const item of allContentItemData){
+      console.log(item.id);
+
+      filteredContentItemData.push({"RepoId":item.contentRepositoryId,"ItemId":item.id,"Label":item.label,"Author":item.createdBy})
+      console.log(filteredContentItemData);
+    }
+    console.log("filteredContentItemData:"+filteredContentItemData.length+"allContentItemData:"+allContentItemData.length)
+    if (filteredContentItemData.length >= allContentItemData.length){
+      console.log("got here");
+      return filteredContentItemData
+    }
+  }
+}
+
 /*
 const amqplib = require('amqplib');
 
@@ -485,6 +564,8 @@ app.get('/',async function(req,res,next){
   })
 })
 
+
+
 app.get('/svgcard',async function(req,res,next){
   vseEnvironment = req.query.vse || process.env.VSE_ENV
   console.log("http://"+ vseEnvironment +"/cms/content/query?fullBodyObject=true&query=%7B%22sys.iri%22:%22http://content.cms.amplience.com/"+ req.query.id +"%22%7D&scope=tree&store=" + req.query.store)
@@ -555,15 +636,30 @@ app.get('/af-tester/:endpoint/*',async function(req,res){
   }) 
 })
 
+app.get('/repoUserInfo',async function(req,res,next){
+  const authToken = await getAuthToken("password");
+  const Repos = await getRepos("password","60a2788fcff47e0001e35d8e",authToken)
+  const Items = await getContentItems("password",Repos,authToken)
+  var ItemAuthors = jp.query(Items,'$..Author').filter((v,i,a)=>a.indexOf(v)==i)
+  var RepoUserData = []
+  for (const author of ItemAuthors){
+    console.log(author);
+    var RepoUserDataObject = jp.query(Items,'$[?(@.Author=="'+author+'")].RepoId').filter((v,i,a)=>a.indexOf(v)==i)
+    // console.log(RepoUserDataObject);
+    RepoUserData.push({"author":author,"repos":RepoUserDataObject});
+  }
+   //get Repo's for a particular author')
+  res.send(RepoUserData);
+})
+
+
+
 app.get('/reposInfo',async function(req,res,next){
   const authToken = await getAuthToken("password");
-  //console.log(authToken);
   const Hubs = await getHubs("password",authToken)
-  //res.send(Hubs);
   try{
     getAuthToken("password")
       .then(authToken =>{
-        
         var repoDataArray = []
         for(const hub of Hubs){
           //res.send(hub);
@@ -575,7 +671,6 @@ app.get('/reposInfo',async function(req,res,next){
             }
           })
           .then(response => {
-            
             var repoIds = jp.query(response.data,'$._embedded["content-repositories"]..id')
             var repoCount = jp.query(response.data,'$.page.totalElements')
             var repoDataObj = {
@@ -587,10 +682,7 @@ app.get('/reposInfo',async function(req,res,next){
                 "repoCount":repoCount
               }
             }
-            //console.log(repoDataObj)
             repoDataArray.push(repoDataObj);
-            //console.log(repoDataArray.length);
-
             if (repoDataArray.length == Hubs.length){
               res.send(repoDataArray);      
             }
@@ -743,6 +835,16 @@ app.get('/upload-svg',function(req,res){
     theme:process.env.THEME || 'flatly',
     pageTitle : "Upload SVG",
     pageDescription : "Upload SVG",
+    query:req.query
+  })
+})
+
+app.get('/fetch-test',function(req,res){
+  res.render('fetch-api',{
+    static_path:'/static',
+    theme:process.env.THEME || 'flatly',
+    pageTitle : "Fetch API test",
+    pageDescription : "Fetch API test",
     query:req.query
   })
 })
