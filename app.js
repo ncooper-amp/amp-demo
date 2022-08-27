@@ -20,6 +20,7 @@ var xhub = require('express-x-hub');
 var jp = require('jsonpath');
 const { promises } = require('dns');
 const { json } = require('body-parser');
+const { resolve } = require('path');
 require('dotenv').config()
 
 var app = express();
@@ -99,52 +100,64 @@ var imgSrc = process.env.IMGSRC
 var token = process.env.TOKEN || 'token';
 var received_updates = [];
 
-const getAuthToken = async function(whichEnv){
-  return new Promise(function(resolve, reject){
-    if (whichEnv == 'qa'){
-      var authCall = {
-        method:"post",
-        url:"https://auth.amplience-qa.net/oauth/token",
-        params:{
-          client_id:process.env.QA_CLIENT,
-          username:process.env.QA_USERNAME,
-          password:process.env.QA_PASSWORD,
-          grant_type:"password",
+var tokenExpires = 0
+
+const getAuthToken = async function(whichEnv,currentToken){
+  
+    return new Promise(function(resolve, reject){
+      if (tokenExpires - Date.now() < 500){
+        console.log("got here");
+        if (whichEnv == 'qa'){
+          var authCall = {
+            method:"post",
+            url:"https://auth.amplience-qa.net/oauth/token",
+            params:{
+              client_id:process.env.QA_CLIENT,
+              username:process.env.QA_USERNAME,
+              password:process.env.QA_PASSWORD,
+              grant_type:"password",
+            }
+          }
         }
-      }
+        else if (whichEnv == 'password' ) {
+          var authCall = {
+            method:"post",
+            url:"https://auth.amplience.net/oauth/token",
+            params:{
+              client_id:process.env.PROD_PASSWORD_CLIENT,
+              username:process.env.PROD_PASSWORD_USERNAME,
+              password:process.env.PROD_PASSWORD_PASSWORD,
+              grant_type:"password",
+            }
+          }
+        }  
+        else {
+          var authCall = {
+            method:"post",
+            url:"https://auth.amplience.net/oauth/token",
+            params:{
+              client_id:clientId,
+              client_secret:apiSecret,
+              grant_type:"client_credentials",
+            }
+          }
+        }  
+        //onsole.log(authCall);
+        axios(authCall)
+        .then(response => {
+          console.log("created new token before previous expired");
+          tokenExpires = Date.now() + (response.data.expires_in * 1000);
+          resolve(response.data.access_token);
+          })
+        .catch(error => {
+          console.log(error);
+          reject(error);
+        })
     }
-    else if (whichEnv == 'password' ) {
-      var authCall = {
-        method:"post",
-        url:"https://auth.amplience.net/oauth/token",
-        params:{
-          client_id:process.env.PROD_PASSWORD_CLIENT,
-          username:process.env.PROD_PASSWORD_USERNAME,
-          password:process.env.PROD_PASSWORD_PASSWORD,
-          grant_type:"password",
-        }
-      }
-    }  
     else {
-      var authCall = {
-        method:"post",
-        url:"https://auth.amplience.net/oauth/token",
-        params:{
-          client_id:clientId,
-          client_secret:apiSecret,
-          grant_type:"client_credentials",
-        }
-      }
-    }  
-    //onsole.log(authCall);
-    axios(authCall)
-    .then(response => {
-      resolve(response.data.access_token);
-      })
-    .catch(error => {
-      console.log(error);
-      reject(error);
-    })
+      console.log("reused existing token")
+      resolve(currentToken);
+    }
   })
 };
 
@@ -185,6 +198,7 @@ const getRepos = async(whichEnv,hubId,authToken,s=100,n=0) => {
   var totalElements = 0;
   var keepgoing = true;
   while (keepgoing){
+   authToken = await getAuthToken(whichEnv,authToken)
    console.log("https://api.amplience.net/v2/content/hubs/"+hubId+"/content-repositories?size=" + s + "&page=" + n)
    let response = await axios({
       method: "get",
@@ -224,6 +238,7 @@ const getContentItems = async(whichEnv,repos,authToken) => {
     var n=0;
     var keepgoing = true;
     while (keepgoing){
+     authToken = await getAuthToken(whichEnv,authToken)
      console.log("https://api.amplience.net/v2/content/content-repositories/"+repo[0]+"/content-items?size=" + s + "&page=" + n)
      let response = await axios({
         method: "get",
@@ -342,7 +357,7 @@ app.post('/instagram', function(req, res) {
 */
 app.get('/permsReport',function(req,res,next){
   try{
-    getAuthToken("qa")
+    getAuthToken("qa",{})
       .then(authToken =>{
         axios({
           method:"get",
@@ -637,8 +652,8 @@ app.get('/af-tester/:endpoint/*',async function(req,res){
 })
 
 app.get('/repoUserInfo',async function(req,res,next){
-  const authToken = await getAuthToken("password");
-  const Repos = await getRepos("password","60a2788fcff47e0001e35d8e",authToken)
+  const authToken = await getAuthToken("password",{});
+  const Repos = await getRepos("password","5c542378c9e77c000120b94b",authToken)
   const Items = await getContentItems("password",Repos,authToken)
   var ItemAuthors = jp.query(Items,'$..Author').filter((v,i,a)=>a.indexOf(v)==i)
   var RepoUserData = []
