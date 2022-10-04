@@ -21,6 +21,7 @@ var jp = require('jsonpath');
 const { promises } = require('dns');
 const { json } = require('body-parser');
 const { resolve } = require('path');
+const { env } = require('process');
 require('dotenv').config()
 
 var app = express();
@@ -42,8 +43,8 @@ app.use(expressValidator());
 app.set('node_modules', __dirname + '/node_modules');
 app.set('models', __dirname + '/models');
 app.use((req,res,next) => {
-  res.append("Accept-CH","DPR, Width, Viewport-Width, RTT, ECT, Downlink");
-  res.append("Vary","DPR, Width, Viewport-Width, RTT, ECT, Downlink");
+  res.append("Accept-CH","DPR, Width, Viewport-Width, RTT, ECT, Downlink, Device-Memory");
+  res.append("Vary","DPR, Width, Viewport-Width, RTT, ECT, Downlink, Device-Memory");
   // res.append("Feature-Policy","ch-dpr http://sjyqzbody3qw1lq6zeetg5clj.staging.bigcontent.io; ch-width http://sjyqzbody3qw1lq6zeetg5clj.staging.bigcontent.io; ch-viewport-width http://sjyqzbody3qw1lq6zeetg5clj.staging.bigcontent.io;");
   next();
 })
@@ -101,58 +102,43 @@ var token = process.env.TOKEN || 'token';
 var received_updates = [];
 
 var tokenExpires = 0
+var currentCompany = 0
 
-const getAuthToken = async function(whichEnv,currentToken){
-  
-    return new Promise(function(resolve, reject){
-      if (tokenExpires - Date.now() < 500){
-       //console.log("got here");
-        if (whichEnv == 'qa'){
-          var authCall = {
-            method:"post",
-            url:"https://auth.amplience-qa.net/oauth/token",
-            params:{
-              client_id:process.env.QA_CLIENT,
-              username:process.env.QA_USERNAME,
-              password:process.env.QA_PASSWORD,
-              grant_type:"password",
-            }
-          }
+const getAuthToken = async function(whichEnv="qa",grant_type="password",client_secret="",currentToken="",company=0){  
+  return new Promise(function(resolve, reject){
+    if ((tokenExpires - Date.now() < 500) || (company != currentCompany) || (company == 0)){
+      console.log("new token");
+      var authCall = {
+        method:"post",
+        url:"https://auth.amplience"+ (whichEnv=="qa"?"-qa":"") +".net/oauth/token",
+        params:{
+          client_id:(whichEnv=="qa"?process.env.QA_CLIENT:process.env.PROD_PASSWORD_CLIENT),
+          grant_type:grant_type
         }
-        else if (whichEnv == 'password' ) {
-          var authCall = {
-            method:"post",
-            url:"https://auth.amplience.net/oauth/token",
-            params:{
-              client_id:process.env.PROD_PASSWORD_CLIENT,
-              username:process.env.PROD_PASSWORD_USERNAME,
-              password:process.env.PROD_PASSWORD_PASSWORD,
-              grant_type:"password",
-            }
-          }
-        }  
-        else {
-          var authCall = {
-            method:"post",
-            url:"https://auth.amplience.net/oauth/token",
-            params:{
-              client_id:clientId,
-              client_secret:apiSecret,
-              grant_type:"client_credentials",
-            }
-          }
-        }  
-        //onsole.log(authCall);
-        axios(authCall)
-        .then(response => {
-         //console.log("created new token before previous expired");
-          tokenExpires = Date.now() + (response.data.expires_in * 1000);
-          resolve(response.data.access_token);
-          })
-        .catch(error => {
-         console.log(error);
-          reject(error);
+      }  
+      if (grant_type == "client_credentials"){
+        authCall.params.client_secret = client_secret
+      }
+      else if (grant_type == "password"){
+        authCall.params.username = (whichEnv=="qa"?process.env.QA_USERNAME:process.env.PROD_PASSWORD_USERNAME)
+        authCall.params.password = (whichEnv=="qa"?process.env.QA_PASSWORD:process.env.PROD_PASSWORD_PASSWORD) 
+      }
+      else {
+        authCall.params.company_id = company;
+        authCall.params.access_token = currentToken
+        currentCompany = company
+      }
+      //console.log(authCall);
+      axios(authCall)
+      .then(response => {
+        //console.log("created new token before previous expired");
+        tokenExpires = Date.now() + (response.data.expires_in * 1000);
+        resolve(response.data.access_token);
         })
+      .catch(error => {
+        console.log(error);
+        reject(error);
+      })
     }
     else {
       console.log("reused existing token")
@@ -160,6 +146,69 @@ const getAuthToken = async function(whichEnv,currentToken){
     }
   })
 };
+
+const getCompanies = async(whichEnv,authToken,s=100,n=1) => {
+  var allCompanyData = []
+  var totalElements = 0;
+  var keepgoing = true;
+  while (keepgoing){
+   let response = await axios({
+      method: "get",
+      url: "https://dam-api.amplience"+ (whichEnv=="qa"?"-qa":"") +".net/v1.5.0/companies?n=" + s + "&s=" + n,
+      headers: {
+        "Authorization": "Bearer " + authToken
+      }
+    })
+    //console.log(response);
+    await allCompanyData.push.apply(allCompanyData,response.data.content.data);
+    totalElements += response.data.content.pageSize;
+    n += response.data.content.count;
+    if (totalElements >= response.data.content.numFound){
+      keepgoing = false;
+      let filteredCompanyData = []
+      for (const company of allCompanyData){
+        filteredCompanyData.push({"id":company.id,"label":company.name,"storageId":company.storageId})
+      }
+      if (filteredCompanyData.length == allCompanyData.length){
+        return filteredCompanyData
+      }
+    }
+  }
+}
+
+
+const getFolders = async(whichEnv,authToken) => {
+  var totalElements = 0;
+  let allFolderData = {};
+  try {
+    let response = await axios({
+      method: "get",
+      url: "https://dam-api.amplience"+ (whichEnv=="qa"?"-qa":"") +".net/v1.5.0/folders?includeCount=false",
+      headers: {
+        "Authorization": "Bearer " + authToken
+      }
+    })
+    var FolderCount = jp.query(response.data.content,'$..data..id')
+    allFolderData = {"company":currentCompany,"folders":FolderCount.length}
+    console.log(allFolderData);
+    console.log("currentCompany: "+currentCompany);
+    console.log("FolderCount: "+FolderCount.length);
+    console.log("-------")
+    return allFolderData
+  }
+  catch (error) {
+    allFolderData = {"company":currentCompany,"folders":0}
+    console.log(allFolderData);
+    console.log("currentCompany: "+currentCompany);
+    console.log("FolderCount: 0");
+    console.log(error);
+    console.log("-------")
+    return allFolderData
+  }
+  //console.log(response.data)
+  
+  //console.log(JSON.stringify(response.data.content));
+}
 
 
 const getHubs = async(whichEnv,authToken,s=100,n=0) => {
@@ -482,7 +531,7 @@ app.get('/permsReport',function(req,res,next){
 app.get('/ListContentItems/:size/:page', function (req, res, next) {
 
   try{
-    getAuthToken().then(authToken =>{
+    getAuthToken("prod","password","","",0).then(authToken =>{
       axios({
         method:"get",
         url: "https://"+cmsEnvironment+"/content-repositories/"+respositoryId+"/content-items?page="+req.params.page+"&size="+req.params.size,
@@ -520,9 +569,18 @@ app.get('/retrieveImage/*', function(req,res,next){
  //console.log(req);
   let queryString = querystring.unescape(querystring.stringify(req.query)).replace("$=","$");
   // console.log(queryString)
-  var image = "http://cdn.media.amplience.net/i/"+ endPoint +"/" + req.params[0] + "?" + queryString + "&w=" + req.headers.width;
+  //let smartQlt = (req.headers.downlink >= 10 ? 90 : (req.headers.downlink < 8 ? (req.headers.downlink < 5 ? (req.headers.downlink < 3 ? (req.headers.downlink < 1 ? 40 : 50) : 60) : 70) : 80))
+  let smartQlt =  (req.headers.downlink < 1 ? 40 : 
+    req.headers.downlink < 3 ? 50 :
+    req.headers.downlink < 5 ? 60 :
+    req.headers.downlink < 8 ? 70 :
+    req.headers.downlink < 10 ? 80 : 90 )
+  //console.log("quality:" + smartQlt)
+  console.log(req.headers)
+  let smartWidth = (req.headers['save-data'] ? (req.headers.width/req.headers.dpr) : req.headers.width)
+  var image = "http://cdn.media.amplience.net/i/bccdemo/" + req.params[0] + "?" + queryString + "&w=" + smartWidth + "&qlt="+ smartQlt;
       // console.log(req.query)
-     //console.log(image); // captures correctly the image name
+     console.log(image); // captures correctly the image name
       req.pipe(request(image)).pipe(res)
 })
 
@@ -665,6 +723,27 @@ app.get('/repoUserInfo',async function(req,res,next){
   }
    //get Repo's for a particular author')
   res.send(RepoUserData);
+})
+
+app.get('/folderCounts',async function(req,res,next){
+  let authToken = await getAuthToken("qa","password","","",0);
+  const Companies = await getCompanies("prod",authToken)
+  var folderCountInfo = [];
+  for (const company of Companies){
+    console.log(company.storageId);
+    authToken = await getAuthToken("prod","password","",authToken,0);
+    const impAuthToken = await getAuthToken("prod","http://amplience.com/grants/company_impersonation","",authToken,company.storageId)
+    await getFolders("prod",impAuthToken).then(folders => {
+      console.log(folders)
+      folderCountInfo.push(folders)
+    })
+    //console.log(FolderData)
+    //console.log(JSON.stringify(FolderData));
+    //console.log(FolderCount);
+    //folderCountInfo.push(FolderData)
+  }
+   //get Repo's for a particular author')
+  res.send(folderCountInfo);
 })
 
 

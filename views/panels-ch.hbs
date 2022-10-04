@@ -3,7 +3,7 @@
     {{#each content.contentSlots}}
       <div class="col-sm">
       {{#if (eq [@type] 'http://c1-qa.adis.ws/c/cmslabs/image-block')}}
-      <img class="img-fluid" src="/retrieveImage/{{image.name}}?$poi$&w=512&sm=aspect&aspect=1:1" sizes="(max-width: 576px) 100vw, 50vw" border=0 />
+      <img class="img-fluid" src="/retrieveImage/{{image.name}}?$poi$&sm=aspect&aspect=1:1" sizes="(max-width: 576px) 100vw, 50vw" border=0 />
       {{/if}}
       {{#if (eq [@type] 'http://c1-qa.adis.ws/c/cmslabs/content-stack')}}
         {{> slides }}
